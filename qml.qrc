@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/interface"/>
+    <qresource prefix="/">
+        <file>MainInterface.qml</file>
+        <file>messageBox/MessageBox.qml</file>
+        <file>messageBox/NewTaskBox.qml</file>
+        <file>setting/SettingDialog.qml</file>
+    </qresource>
+</RCC>
