@@ -3,9 +3,9 @@
 TaskModel::TaskModel(QObject *parent)
     : QAbstractListModel(parent)
 {
-    SingleTask t(1,"1.txt","c:/download","http://5555",6666);
-    t.speed_="1.5mb/s";
-    dataList_<<t;
+    // SingleTask t(1,"1.txt","c:/download","http://5555",6666);
+    // t.speed_="1.5mb/s";
+    // dataList_<<t;
 }
 
 int TaskModel::rowCount(const QModelIndex &parent) const
@@ -27,28 +27,12 @@ QVariant TaskModel::data(const QModelIndex &index, int role) const
     if(role==SingleTask::URL)return dataList_[index.row()].url_;
     if(role==SingleTask::STATUS)return kMsgTypeToString.at(dataList_[index.row()].status_);
     if(role==SingleTask::SAVEPOSITION)return dataList_[index.row()].savePosition_;
-    if(role==SingleTask::SPEED)return dataList_[index.row()].speed_;
-    if(role==SingleTask::SIZE)return dataList_[index.row()].fileSize_;
+    if(role==SingleTask::SPEED)return formatFileSize(dataList_[index.row()].speed_);
+    if(role==SingleTask::SIZE)return formatFileSize(dataList_[index.row()].fileSize_);
 
     return QVariant();
 }
 
-bool TaskModel::insertRows(int row, int count, const QModelIndex &parent)
-{
-    beginInsertRows(parent, row, row + count - 1);
-
-    endInsertRows();
-    return true;
-}
-
-bool TaskModel::removeRows(int row, int count, const QModelIndex &parent)
-{
-    beginRemoveRows(parent, row, row + count - 1);
-
-
-    endRemoveRows();
-    return true;
-}
 
 QHash<int, QByteArray> TaskModel::roleNames() const
 {
@@ -71,4 +55,91 @@ QString TaskModel::GetName(int index)
         return "";
     }
     return dataList_.at(index).fileName_;
+}
+
+bool TaskModel::addNewRow(SingleTask task,int position)
+{
+    if(position<0||position>rowCount()){
+        qDebug()<<__FUNCTION__<<"invalid index";
+        return false;
+    }
+    beginInsertRows(QModelIndex(),position,position);
+    dataList_.insert(position,task);
+    endInsertRows();
+    return true;
+}
+
+bool TaskModel::removeARow(QString id)
+{
+    for(int i=0;i<dataList_.size();++i){
+        if(dataList_.at(i).id_==id){
+            beginRemoveRows(QModelIndex(),i,i);
+            dataList_.removeAt(i);
+            endRemoveRows();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool TaskModel::removeARow(int position)
+{
+    if(position<0||position>=rowCount()){
+        qDebug()<<__FUNCTION__<<"invalid index";
+        return false;
+    }
+    beginRemoveRows(QModelIndex(),position,position);
+    dataList_.removeAt(position);
+    endRemoveRows();
+    return true;
+}
+
+void TaskModel::updateRow(SingleTask::TaskProperties type, int position, QVariant data)
+{
+    if(!data.isValid()){
+        qDebug()<<__FUNCTION__<<"invalid data";
+        return;
+    }
+    if(position<0||position>=rowCount()){
+        qDebug()<<__FUNCTION__<<"invalid index";
+        return;
+    }
+    if(type==SingleTask::FILENAME)dataList_[position].fileName_=data.toString();
+    if(type==SingleTask::PROGRESS)dataList_[position].progress_=data.toDouble();
+    if(type==SingleTask::STATUS)dataList_[position].status_=(DownloadStatus)data.toInt();
+    if(type==SingleTask::SPEED){
+        qint64 num=data.toULongLong();
+        dataList_[position].speed_=num/1.0/qAbs(QDateTime::currentDateTime().secsTo(dataList_[position].beginTime_));
+    }
+    emit dataChanged(index(position),index(position),{type});
+}
+
+void TaskModel::updateRow(SingleTask::TaskProperties type, QString id, QVariant data)
+{
+    for(int i=0;i<dataList_.size();i++){
+        if(dataList_.at(i).id_==id){
+            updateRow(type,i,data);
+        }
+    }
+    qDebug()<<__FUNCTION__<<"invalid id";
+}
+
+QString TaskModel::formatFileSize(qint64 fileSize) const {
+    if (fileSize < 0) return "Unknown";
+
+    const qint64 KB = 1024;
+    const qint64 MB = KB * 1024;
+    const qint64 GB = MB * 1024;
+
+    if (fileSize >= GB) {
+        return QString::number(fileSize / (double)GB, 'f', 2) + " GB";
+    } else if (fileSize >= MB) {
+        return QString::number(fileSize / (double)MB, 'f', 2) + " MB";
+    } else if (fileSize >= KB) {
+        return QString::number(fileSize / (double)KB, 'f', 2) + " KB";
+    } else {
+        return QString::number(fileSize) + " bytes";
+    }
+
+    return "";
 }

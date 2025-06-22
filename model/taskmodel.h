@@ -3,6 +3,7 @@
 
 #include <QAbstractListModel>
 #include <QString>
+#include <QDateTime>
 
 enum class DownloadStatus{
     WAITTING,
@@ -24,23 +25,24 @@ public:
         SAVEPOSITION,
         SIZE
     };
-    SingleTask(int id,QString fileName,QString savePosition,QString url,qint64 fileSize)
+    SingleTask(QString id,QString fileName,QString savePosition,QString url,qint64 fileSize)
         :id_(id),fileName_(fileName),url_(url),savePosition_(savePosition),fileSize_(fileSize)
     {
         progress_=0;
-        speed_="";
         status_=DownloadStatus::WAITTING;
+        beginTime_=QDateTime::currentDateTime();
     }
     SingleTask(){}
 
-    int id_;
+    QString id_;
     QString fileName_;
     double progress_;
-    QString speed_;
+    qint64 speed_;
     QString url_;
     DownloadStatus status_;
     QString savePosition_;
     qint64 fileSize_;
+    QDateTime beginTime_;
 };
 
 class TaskModel : public QAbstractListModel
@@ -50,21 +52,19 @@ class TaskModel : public QAbstractListModel
 public:
     explicit TaskModel(QObject *parent = nullptr);
 
-    // Basic functionality:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-
-    // Add data:
-    bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
-
-    // Remove data:
-    bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
-
     QHash<int,QByteArray> roleNames() const override;
 
 public slots:
     QString GetName(int index);
+    bool addNewRow(SingleTask task,int position=0);
+    bool removeARow(QString id);
+    bool removeARow(int position);
+    void updateRow(SingleTask::TaskProperties type,int position,QVariant data);
+    void updateRow(SingleTask::TaskProperties type,QString id,QVariant data);
+
+    QString formatFileSize(qint64 fileSize) const;
 
 private:
     QVector<SingleTask> dataList_;

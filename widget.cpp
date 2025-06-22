@@ -61,8 +61,8 @@ void Widget::addTask()
 
         QString id=QUuid::createUuid().toString(QUuid::WithoutBraces);
         SingleDownloadManager *dm=new SingleDownloadManager(this,id,thrdNum,url,savePosition);
-        connect(dm,&SingleDownloadManager::errorOccured,[this](QString msg){
-            CustomMessageBox box(this,msg,MsgType::Error);
+        connect(dm,&SingleDownloadManager::errorOccured,[this,dm](QString msg){
+            CustomMessageBox box(this,"错误",msg,MsgType::Error);
             box.exec();
             for(int i=0;i<tasks_.size();i++){
                 if(tasks_.at(i)->getId()==dm->getId()){
@@ -70,6 +70,16 @@ void Widget::addTask()
                     tasks_.removeAt(i);
                 }
             }
+        });
+        connect(dm,&SingleDownloadManager::parseFileInfo,this,[this,dm](FileInfo info){
+            model_->addNewRow(SingleTask(dm->getId(),info.suggestedFileName_,dm->getSavePosition()
+                                         ,dm->getUrl().toString()
+                                         ,info.fileSize_));
+        });
+        connect(dm,&SingleDownloadManager::downloadProgress,this,[this,dm](qint64 bytesReceived,qint64 bytesTotal){
+            double progress=bytesReceived/1.0/bytesTotal;
+            model_->updateRow(SingleTask::TaskProperties::PROGRESS,dm->getId(),QVariant(progress));
+            model_->updateRow(SingleTask::TaskProperties::SPEED,dm->getId(),QVariant(bytesReceived));
         });
         tasks_.append(dm);
         dm->start(id);

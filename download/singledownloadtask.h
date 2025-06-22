@@ -11,7 +11,7 @@ class SingleDownloadTask : public QObject
     Q_OBJECT
 public:
     explicit SingleDownloadTask(QObject *parent = nullptr,qint64 startByte=0,qint64 endByte=0,QUrl url=QUrl(),
-                                QString id="");
+                                QString id="",int index=-1);
     ~SingleDownloadTask();
 
 public slots:
@@ -20,6 +20,9 @@ public slots:
     void cancelDownload();
     void recordDownloadProgress(qint64 bytesReceived, qint64 bytesTotal);
 
+
+    QString getId(){return id_;}
+    int getIndex(){return index_;}
 private:
     QNetworkAccessManager *manager_;
     QNetworkReply *reply_;
@@ -31,6 +34,7 @@ private:
     QString id_;
     qint64 totalSize_;
     qint64 currentReceiveSize_;
+    int index_;
 
 signals:
     void errorOccurred(QString msg);

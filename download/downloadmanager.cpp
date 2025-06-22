@@ -11,6 +11,13 @@ SingleDownloadManager::SingleDownloadManager(QObject *parent,QString id
     manager_=new QNetworkAccessManager(this);
 }
 
+SingleDownloadManager::~SingleDownloadManager()
+{
+    for(int i=0;i<thrds_.size();++i){
+        delete thrds_[i];
+    }
+}
+
 void SingleDownloadManager::start(QString id)
 {
     if(id!="all"&&id_!=id)
@@ -39,8 +46,36 @@ void SingleDownloadManager::cancel(QString id)
         return;
 }
 
+void SingleDownloadManager::sumDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
+{
+    SingleDownloadTask *task=qobject_cast<SingleDownloadTask*>(sender());
+    if(!task)
+        return;
+    int index=task->getIndex();
+    progress_[index]=bytesReceived/1.0/bytesTotal;
+
+    double sum=0;
+    bool allDone=true;
+    for(auto &i:progress_){
+        if(i!=1.0)allDone=false;
+        sum+=i;
+    }
+    if(allDone){
+        emit downloadProgress(info_.fileSize_,info_.fileSize_);
+        progress_.clear();
+        for(int i=0;i<thrds_.size();++i){
+            thrds_[i]->deleteLater();
+        }
+        thrds_.clear();
+    } else {
+        emit downloadProgress((int)(sum*info_.fileSize_),info_.fileSize_);
+    }
+
+}
+
 void SingleDownloadManager::createThrd(FileInfo info)
 {
+    emit parseFileInfo(info);
     info_=info;
     qint64 interval=info.fileSize_/thrdNum_;
     qint64 l=0;
@@ -51,9 +86,17 @@ void SingleDownloadManager::createThrd(FileInfo info)
         if(i==thrdNum_)
             r=info.fileSize_-1;
 
-        QtConcurrent::run([this]{
-            SingleDownloadTask *task=new SingleDownloadTask(this,l,r,url_,id_+QString::number(i));
+        progress_.append(0);
+        QtConcurrent::run([this,i,l,r]{
+            SingleDownloadTask *task=new SingleDownloadTask(nullptr,l,r,url_,id_+QString::number(i),i);
+            connect(task,&SingleDownloadTask::downloadProgress,this,&SingleDownloadManager::sumDownloadProgress,Qt::QueuedConnection);
+            mutex_.lock();
+            thrds_.append(task);
+            mutex_.unlock();
+            QEventLoop loop;
+            connect(task,&SingleDownloadTask::finished,&loop,QEventLoop::quit);
             task->startDownload();
+            loop.exec();
         });
     }
 
