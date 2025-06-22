@@ -3,9 +3,7 @@
 TaskModel::TaskModel(QObject *parent)
     : QAbstractListModel(parent)
 {
-    // SingleTask t(1,"1.txt","c:/download","http://5555",6666);
-    // t.speed_="1.5mb/s";
-    // dataList_<<t;
+
 }
 
 int TaskModel::rowCount(const QModelIndex &parent) const
@@ -119,6 +117,7 @@ void TaskModel::updateRow(SingleTask::TaskProperties type, QString id, QVariant 
     for(int i=0;i<dataList_.size();i++){
         if(dataList_.at(i).id_==id){
             updateRow(type,i,data);
+            return;
         }
     }
     qDebug()<<__FUNCTION__<<"invalid id";

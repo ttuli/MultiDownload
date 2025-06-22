@@ -96,7 +96,7 @@ Rectangle {
                         font.pixelSize: 14
                         color: "#212529"
                         selectByMouse: true
-                        // displayText: "请输入下载链接..."
+                        clip: true;
 
                         Text {
                             anchors.left: parent.left

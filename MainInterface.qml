@@ -334,10 +334,14 @@ Rectangle {
                                 ProgressBar {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 8
-                                    value: model_progress / 100
+                                    value: model_progress/100;
 
                                     background: Rectangle {
-                                        color: Qt.rgba(mutedTextColor.r, mutedTextColor.g, mutedTextColor.b, 0.3)
+                                        color: {
+                                            if(model_progress<100)
+                                                return Qt.rgba(mutedTextColor.r, mutedTextColor.g, mutedTextColor.b, 0.3)
+                                            return "lightgreen";
+                                        }
                                         radius: 4
                                     }
 
@@ -360,7 +364,10 @@ Rectangle {
                                 }
 
                                 Text {
-                                    text: model_progress + "%"
+                                    text: {
+                                        return model_progress + "%"
+                                    }
+
                                     color: textColor
                                     font.pixelSize: 12
                                 }

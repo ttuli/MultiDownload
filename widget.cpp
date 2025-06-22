@@ -78,7 +78,8 @@ void Widget::addTask()
         });
         connect(dm,&SingleDownloadManager::downloadProgress,this,[this,dm](qint64 bytesReceived,qint64 bytesTotal){
             double progress=bytesReceived/1.0/bytesTotal;
-            model_->updateRow(SingleTask::TaskProperties::PROGRESS,dm->getId(),QVariant(progress));
+            double rounded = std::round(progress * 100.0) / 100.0;
+            model_->updateRow(SingleTask::TaskProperties::PROGRESS,dm->getId(),QVariant(rounded*100));
             model_->updateRow(SingleTask::TaskProperties::SPEED,dm->getId(),QVariant(bytesReceived));
         });
         tasks_.append(dm);

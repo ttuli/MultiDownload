@@ -84,7 +84,6 @@ void SingleDownloadTask::cancelDownload()
 
 void SingleDownloadTask::recordDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 {
-    qDebug()<<currentReceiveSize_;
     currentReceiveSize_=bytesReceived;
     totalSize_=bytesTotal;
     emit downloadProgress(bytesReceived,bytesTotal);

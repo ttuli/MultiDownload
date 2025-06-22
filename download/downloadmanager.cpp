@@ -58,7 +58,7 @@ void SingleDownloadManager::sumDownloadProgress(qint64 bytesReceived, qint64 byt
     bool allDone=true;
     for(auto &i:progress_){
         if(i!=1.0)allDone=false;
-        sum+=i;
+        sum+=i/thrdNum_;
     }
     if(allDone){
         emit downloadProgress(info_.fileSize_,info_.fileSize_);
@@ -80,9 +80,9 @@ void SingleDownloadManager::createThrd(FileInfo info)
     qint64 interval=info.fileSize_/thrdNum_;
     qint64 l=0;
     qint64 r=-1;
-    for(int i=1;i<=thrdNum_;++i){
+    for(int i=0;i<thrdNum_;++i){
         l=r+1;
-        r=i*interval;
+        r=(i+1)*interval;
         if(i==thrdNum_)
             r=info.fileSize_-1;
 
