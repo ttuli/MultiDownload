@@ -4,8 +4,10 @@
 #include <QWidget>
 #include <QQuickWidget>
 #include <QNetworkAccessManager>
+#include <QVector>
 #include "model/taskmodel.h"
 #include "setting/settingdialog.h"
+#include "download/downloadmanager.h"
 
 class Widget : public QWidget
 {
@@ -17,11 +19,9 @@ public:
 
 public slots:
     void addTask();
-    void cancelTask(qint64 taskID);
-    void pauseTask(qint64 taskID);
-    void deleteTask(qint64 taskID);
-    void getFileInfo(QUrl url);
-    void startTask(QUrl url);
+    void cancelTask(QString taskID);
+    void pauseTask(QString taskID);
+    void deleteTask(QString taskID);
 
     void doSetting();
 
@@ -31,5 +31,6 @@ private:
     SettingDialog *settingDialog_;
 
     QNetworkAccessManager *manager_;
+    QVector<SingleDownloadManager*> tasks_;
 };
 #endif // WIDGET_H

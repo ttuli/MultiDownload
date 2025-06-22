@@ -64,3 +64,11 @@ QHash<int, QByteArray> TaskModel::roleNames() const
 
     return role;
 }
+
+QString TaskModel::GetName(int index)
+{
+    if(index<0||index>=dataList_.size()){
+        return "";
+    }
+    return dataList_.at(index).fileName_;
+}

@@ -110,6 +110,7 @@ Rectangle {
                 }
             }
 
+
             // 保存路径
             ColumnLayout {
                 Layout.fillWidth: true
@@ -188,6 +189,34 @@ Rectangle {
                     }
                 }
             }
+
+            //线程数
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Text {
+                    text: "线程数"
+                    font.pixelSize: 14
+                    font.weight: Font.Medium
+                    color: "#495057"
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 100;
+                    height: 44
+                    color:"transparent"
+                    radius: 8
+
+
+                    CusComboBox{
+                        id:thrdInput
+                        anchors.fill: parent;
+                        anchors.topMargin: 5;
+                        anchors.bottomMargin: 5;
+                    }
+                }
+            }
         }
 
         Item { Layout.fillHeight: true }
@@ -251,7 +280,7 @@ Rectangle {
                     hoverEnabled: true
                     enabled: parent.enabled
                     onClicked: {
-                        rootWidget.saveDownloadInfo(urlInput.text,pathInput.text)
+                        rootWidget.saveDownloadInfo(urlInput.text,pathInput.text,thrdInput.currentValue)
                         rootWidget.accept();
                     }
                 }

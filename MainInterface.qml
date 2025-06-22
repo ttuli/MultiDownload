@@ -429,7 +429,8 @@ Rectangle {
                 spacing: 10
 
                 Text {
-                    text: downloadList.selectedIndex >= 0 ? "已选中: " + taskModel.get(downloadList.selectedIndex).filename : "请选择一个任务"
+                    id:selectFileName;
+                    text: downloadList.selectedIndex >= 0 ? "已选中: " + taskModel.GetName(downloadList.selectedIndex) : "请选择一个任务"
                     color: downloadList.selectedIndex >= 0 ? textColor : mutedTextColor
                     font.pixelSize: 12
                     Layout.fillWidth: true

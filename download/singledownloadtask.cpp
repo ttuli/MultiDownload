@@ -10,7 +10,7 @@ SingleDownloadTask::SingleDownloadTask(QObject *parent,qint64 startByte,qint64 e
 {
     manager_=new QNetworkAccessManager(this);
     reply_=nullptr;
-    file_.setFileName("part_"+id+".tmp");
+    file_.setFileName(id+".tmp");
     file_.open(QIODevice::WriteOnly);
     currentReceiveSize_=0;
     totalSize_=0;
@@ -34,9 +34,6 @@ void SingleDownloadTask::startDownload()
         }
         file_.write(reply_->readAll());
     });
-    connect(reply_,&QNetworkReply::errorOccurred,[this]{
-        emit errorOccurred(reply_->errorString());
-    });
     connect(reply_,&QNetworkReply::finished,this,[this](){
         emit finished();
 
@@ -56,11 +53,11 @@ void SingleDownloadTask::startDownload()
             file_.close();
         reply_->abort();
         reply_->deleteLater();
-    });
+    },Qt::DirectConnection);
     connect(reply_,&QNetworkReply::destroyed,[]{
-        qDebug()<<"QNetworkreply successfully";
+        qDebug()<<"SingleDownloadTask QNetworkreply successfully";
     });
-    connect(reply_,&QNetworkReply::downloadProgress,this,&SingleDownloadTask::recordDownloadProgress);
+    connect(reply_,&QNetworkReply::downloadProgress,this,&SingleDownloadTask::recordDownloadProgress,Qt::DirectConnection);
 }
 
 void SingleDownloadTask::pauseDownload()

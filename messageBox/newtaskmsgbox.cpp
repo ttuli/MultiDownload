@@ -17,12 +17,13 @@ NewTaskMsgBox::NewTaskMsgBox(QWidget *parent)
     qhb->setContentsMargins(0,0,0,0);
     qhb->addWidget(interface_);
 
-    setMaximumSize(480,320);
-    setMinimumSize(480,320);
+    setMaximumSize(480,390);
+    setMinimumSize(480,390);
 }
 
-void NewTaskMsgBox::saveDownloadInfo(QString url, QString savePosiotion)
+void NewTaskMsgBox::saveDownloadInfo(QString url, QString savePosiotion,int thrdNum)
 {
     url_=url;
     savePosition_=savePosiotion;
+    thrdNum_=thrdNum;
 }

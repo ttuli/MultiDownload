@@ -10,21 +10,23 @@ CONFIG += c++17
 
 SOURCES += \
     base/framless_dialog.cpp \
+    download/downloadmanager.cpp \
     main.cpp \
     messageBox/custommessagebox.cpp \
     messageBox/newtaskmsgbox.cpp \
     model/taskmodel.cpp \
     setting/settingdialog.cpp \
-    singledownloadtask.cpp \
+    download/singledownloadtask.cpp \
     widget.cpp
 
 HEADERS += \
     base/framless_dialog.h \
+    download/downloadmanager.h \
     messageBox/custommessagebox.h \
     messageBox/newtaskmsgbox.h \
     model/taskmodel.h \
     setting/settingdialog.h \
-    singledownloadtask.h \
+    download/singledownloadtask.h \
     widget.h
 
 LIBS+= -ldwmapi

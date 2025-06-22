@@ -10,7 +10,8 @@ class SingleDownloadTask : public QObject
 {
     Q_OBJECT
 public:
-    explicit SingleDownloadTask(QObject *parent = nullptr,qint64 startByte=0,qint64 endByte=0,QUrl url=QUrl(),QString id="");
+    explicit SingleDownloadTask(QObject *parent = nullptr,qint64 startByte=0,qint64 endByte=0,QUrl url=QUrl(),
+                                QString id="");
     ~SingleDownloadTask();
 
 public slots:

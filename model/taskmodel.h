@@ -31,6 +31,7 @@ public:
         speed_="";
         status_=DownloadStatus::WAITTING;
     }
+    SingleTask(){}
 
     int id_;
     QString fileName_;
@@ -61,15 +62,19 @@ public:
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
     QHash<int,QByteArray> roleNames() const override;
+
+public slots:
+    QString GetName(int index);
+
 private:
     QVector<SingleTask> dataList_;
 
     const std::unordered_map<DownloadStatus, QString> kMsgTypeToString = {
-        {DownloadStatus::DOWNLOADING, "downloading"},
-        {DownloadStatus::PAUSED, "paused"},
-        {DownloadStatus::CANCELED, "cancel"},
-        {DownloadStatus::FINISHED, "success"},
-        {DownloadStatus::WAITTING,"waitting"}
+        {DownloadStatus::DOWNLOADING, "下载中"},
+        {DownloadStatus::PAUSED, "已暂停"},
+        {DownloadStatus::CANCELED, "正在取消"},
+        {DownloadStatus::FINISHED, "下载成功"},
+        {DownloadStatus::WAITTING,"等待中"}
     };
 };
 

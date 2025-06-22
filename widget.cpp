@@ -1,7 +1,7 @@
 #include "widget.h"
 #include "messageBox/newtaskmsgbox.h"
 #include "messageBox/custommessagebox.h"
-#include "singledownloadtask.h"
+#include "download/downloadmanager.h"
 #include "setting/settingdialog.h"
 #include <QHBoxLayout>
 #include <QQmlContext>
@@ -49,7 +49,8 @@ void Widget::addTask()
     if(w.exec()==QDialog::Accepted){
         QString url=w.getUrl();
         QString savePosition=w.getSavePosition();
-        QRegularExpression re(R"(https?:\/\/[^\s\/]+(?:\/[^\s\/]+)*\/[^\/\s]+\.(zip|rar|exe|tar\.gz|7z|pdf|docx?|xlsx?|apk|mp[34]|iso))");
+        int thrdNum=w.getThrdNum();
+        QRegularExpression re(R"(https?://(?:www\.)?[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*(?::\d+)?/[^\s]*\.(zip|rar|7z|tar|gz|bz2|xz|exe|msi|dmg|pkg|deb|rpm|apk|jar|war|ear|pdf|doc|docx|xls|xlsx|ppt|pptx|mp3|mp4|avi|mkv|mov|wmv|flv|webm|iso|img|bin)(?:\?[^\s&]*(?:&[^\s&]*)*)?(?:#[^\s]*)?)");
         QRegularExpressionMatch match=re.match(url);
 
         if(!match.hasMatch()){
@@ -58,45 +59,38 @@ void Widget::addTask()
             return;
         }
 
-        getFileInfo(url);
+        QString id=QUuid::createUuid().toString(QUuid::WithoutBraces);
+        SingleDownloadManager *dm=new SingleDownloadManager(this,id,thrdNum,url,savePosition);
+        connect(dm,&SingleDownloadManager::errorOccured,[this](QString msg){
+            CustomMessageBox box(this,msg,MsgType::Error);
+            box.exec();
+            for(int i=0;i<tasks_.size();i++){
+                if(tasks_.at(i)->getId()==dm->getId()){
+                    tasks_.at(i)->deleteLater();
+                    tasks_.removeAt(i);
+                }
+            }
+        });
+        tasks_.append(dm);
+        dm->start(id);
     }
 }
 
-void Widget::cancelTask(qint64 taskID)
+void Widget::cancelTask(QString taskID)
 {
 
 }
 
-void Widget::pauseTask(qint64 taskID)
+void Widget::pauseTask(QString taskID)
 {
 
 }
 
-void Widget::deleteTask(qint64 taskID)
+void Widget::deleteTask(QString taskID)
 {
 
 }
 
-void Widget::getFileInfo(QUrl url)
-{
-    QNetworkRequest request(url);
-    QNetworkReply *reply=manager_->head(request);
-    connect(reply,&QNetworkReply::finished,[this,reply,url]{
-        reply->deleteLater();
-        startTask(url);
-    });
-}
-
-void Widget::startTask(QUrl url)
-{
-    QString id=QUuid::createUuid().toString(QUuid::WithoutBraces);
-    QtConcurrent::run([this]{
-        SingleDownloadTask task;
-        QEventLoop loop;
-        connect(&task,&SingleDownloadTask::finished,&loop,&QEventLoop::quit);
-        loop.exec();
-    });
-}
 
 void Widget::doSetting()
 {
