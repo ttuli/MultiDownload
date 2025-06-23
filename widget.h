@@ -19,11 +19,15 @@ public:
 
 public slots:
     void addTask();
-    void cancelTask(QString taskID);
-    void pauseTask(QString taskID);
-    void deleteTask(QString taskID);
+    void cancelTask(QString taskID,int index);
+    void pauseTask(QString taskID,int index);
+    void deleteTask(QString taskID,int index);
+    void startTask(QString taskID,int index);
 
     void doSetting();
+
+protected:
+    void closeEvent(QCloseEvent*) override;
 
 private:
     QQuickWidget *mainInterface_;

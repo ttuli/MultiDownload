@@ -338,9 +338,9 @@ Rectangle {
 
                                     background: Rectangle {
                                         color: {
-                                            if(model_progress<100)
+                                            if(model_status!=="completed")
                                                 return Qt.rgba(mutedTextColor.r, mutedTextColor.g, mutedTextColor.b, 0.3)
-                                            return "lightgreen";
+                                            return successColor
                                         }
                                         radius: 4
                                     }
@@ -376,7 +376,12 @@ Rectangle {
                             // 速度
                             Text {
                                 Layout.preferredWidth: 90
-                                text: model_speed
+                                text: {
+                                    if(model_status!=="completed"&&model_status!=="paused"&&model_status!=="cancel")
+                                        return model_speed
+                                    return "";
+                                }
+
                                 color: textColor
                                 font.pixelSize: 12
                             }
@@ -470,7 +475,8 @@ Rectangle {
 
                     onClicked: {
                         if (downloadList.selectedIndex >= 0) {
-                            taskModel.setProperty(downloadList.selectedIndex, "status", "downloading")
+                            // taskModel.setProperty(downloadList.selectedIndex, "status", "downloading")
+                            rootWidget.startTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
                         }
                     }
                 }
@@ -500,8 +506,9 @@ Rectangle {
 
                     onClicked: {
                         if (downloadList.selectedIndex >= 0) {
-                            taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
-                            taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
+                            // taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
+                            // taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
+                            rootWidget.pauseTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
                         }
                     }
                 }
@@ -531,8 +538,8 @@ Rectangle {
 
                     onClicked: {
                         if (downloadList.selectedIndex >= 0) {
-                            taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
-                            taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
+                            // taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
+                            // taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
                         }
                     }
                 }
@@ -564,8 +571,8 @@ Rectangle {
 
                     onClicked: {
                         if (downloadList.selectedIndex >= 0) {
-                            taskModel.remove(downloadList.selectedIndex)
-                            downloadList.selectedIndex = -1
+                            // taskModel.remove(downloadList.selectedIndex)
+                            // downloadList.selectedIndex = -1
                         }
                     }
                 }

@@ -27,15 +27,19 @@ public:
     ~SingleDownloadManager();
 public slots:
     void start(QString id);
+    void restart(QString id);
     void pause(QString id);
     void cancel(QString id);
 
     void sumDownloadProgress(qint64 bytesReceived,qint64 bytesTotal);
+    void sumCancelNum(QString id);
+    void sumPauseNum(QString id);
 
     QString getId(){return id_;}
     QString getSavePosition(){return savePosition_;}
     QUrl getUrl(){return url_;}
 
+    void close();
 
 private:
     void extractFileInfo(QNetworkReply *reply);
@@ -45,6 +49,7 @@ private:
     QString extractFileNameFromUrl(const QUrl &url);
 
     void createThrd(FileInfo info);
+    void removeThrd(QString id);
 
 private:
     QString id_;
@@ -52,6 +57,10 @@ private:
     QUrl url_;
     QString savePosition_;
     FileInfo info_;
+    bool cancel_;
+
+    int pauseNum_=0;
+    int restartNum_=0;
 
     QNetworkAccessManager *manager_;
     QMimeDatabase m_mimeDatabase;
@@ -65,6 +74,10 @@ signals:
     void errorOccured(QString msg);
     void downloadProgress(qint64 bytesReceived,qint64 bytesTotal);
     void parseFileInfo(FileInfo info);
+    void pauseSig();
+    void pauseSuccessed();
+    void restartSig();
+    void restartSuccessed();
 };
 
 #endif // DOWNLOADMANAGER_H

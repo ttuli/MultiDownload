@@ -41,7 +41,10 @@ Widget::Widget(QWidget *parent)
     setMinimumSize(640,480);
 }
 
-Widget::~Widget() {}
+Widget::~Widget()
+{
+
+}
 
 void Widget::addTask()
 {
@@ -78,30 +81,57 @@ void Widget::addTask()
         });
         connect(dm,&SingleDownloadManager::downloadProgress,this,[this,dm](qint64 bytesReceived,qint64 bytesTotal){
             double progress=bytesReceived/1.0/bytesTotal;
-            double rounded = std::round(progress * 100.0) / 100.0;
-            model_->updateRow(SingleTask::TaskProperties::PROGRESS,dm->getId(),QVariant(rounded*100));
+            double rounded = (int)(progress*100);
+            model_->updateRow(SingleTask::TaskProperties::PROGRESS,dm->getId(),QVariant(rounded));
             model_->updateRow(SingleTask::TaskProperties::SPEED,dm->getId(),QVariant(bytesReceived));
+            if(bytesReceived==bytesTotal){
+                model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::FINISHED));
+                for(int i=0;i<tasks_.size();++i){
+                    if(tasks_[i]->getId()==dm->getId()){
+                        dm->close();
+                        dm->deleteLater();
+                        tasks_.removeAt(i);
+                        break;
+                    }
+                }
+            }
+        });
+        connect(dm,&SingleDownloadManager::destroyed,[]{
+            qDebug()<<"SingleDownloadManager destory";
+        });
+        connect(dm,&SingleDownloadManager::pauseSuccessed,[this,dm]{
+            model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::PAUSED));
         });
         tasks_.append(dm);
         dm->start(id);
     }
 }
 
-void Widget::cancelTask(QString taskID)
+void Widget::cancelTask(QString taskID,int index)
 {
 
 }
 
-void Widget::pauseTask(QString taskID)
+void Widget::pauseTask(QString taskID,int index)
 {
-
+    if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
+        tasks_[index]->pause(taskID);
+    }
 }
 
-void Widget::deleteTask(QString taskID)
+void Widget::deleteTask(QString taskID,int index)
 {
+    if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
 
+    }
 }
 
+void Widget::startTask(QString taskID, int index)
+{
+    if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
+
+    }
+}
 
 void Widget::doSetting()
 {
@@ -114,4 +144,12 @@ void Widget::doSetting()
         settingDialog_=nullptr;
     });
     settingDialog_->show();
+}
+
+void Widget::closeEvent(QCloseEvent *)
+{
+    for(auto i:tasks_){
+        i->close();
+        i->deleteLater();
+    }
 }

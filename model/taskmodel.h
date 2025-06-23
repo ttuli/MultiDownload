@@ -29,7 +29,7 @@ public:
         :id_(id),fileName_(fileName),url_(url),savePosition_(savePosition),fileSize_(fileSize)
     {
         progress_=0;
-        status_=DownloadStatus::WAITTING;
+        status_=DownloadStatus::DOWNLOADING;
         beginTime_=QDateTime::currentDateTime();
     }
     SingleTask(){}
@@ -58,6 +58,7 @@ public:
 
 public slots:
     QString GetName(int index);
+    QString GetId(int index);
     bool addNewRow(SingleTask task,int position=0);
     bool removeARow(QString id);
     bool removeARow(int position);
@@ -70,11 +71,11 @@ private:
     QVector<SingleTask> dataList_;
 
     const std::unordered_map<DownloadStatus, QString> kMsgTypeToString = {
-        {DownloadStatus::DOWNLOADING, "下载中"},
-        {DownloadStatus::PAUSED, "已暂停"},
-        {DownloadStatus::CANCELED, "正在取消"},
-        {DownloadStatus::FINISHED, "下载成功"},
-        {DownloadStatus::WAITTING,"等待中"}
+        {DownloadStatus::DOWNLOADING, "downloading"},
+        {DownloadStatus::PAUSED, "paused"},
+        {DownloadStatus::CANCELED, "cancel"},
+        {DownloadStatus::FINISHED, "completed"},
+        {DownloadStatus::WAITTING,"waitting"}
     };
 };
 

@@ -9,14 +9,20 @@ SingleDownloadManager::SingleDownloadManager(QObject *parent,QString id
     : QObject{parent},id_(id),thrdNum_(thrdNum),url_(url),savePosition_(savePosition)
 {
     manager_=new QNetworkAccessManager(this);
+    cancel_=false;
 }
 
 SingleDownloadManager::~SingleDownloadManager()
+{}
+
+void SingleDownloadManager::close()
 {
-    for(int i=0;i<thrds_.size();++i){
-        delete thrds_[i];
+    for(int i=0;i<thrds_.size();i++){
+        thrds_[i]->close();
     }
+    thrds_.clear();
 }
+
 
 void SingleDownloadManager::start(QString id)
 {
@@ -34,10 +40,19 @@ void SingleDownloadManager::start(QString id)
     });
 }
 
+void SingleDownloadManager::restart(QString id)
+{
+    if(id!="all"&&id_!=id)
+        return;
+    emit restartSig();
+}
+
 void SingleDownloadManager::pause(QString id)
 {
     if(id!="all"&&id_!=id)
         return;
+    emit pauseSig();
+    cancel_=true;
 }
 
 void SingleDownloadManager::cancel(QString id)
@@ -49,28 +64,39 @@ void SingleDownloadManager::cancel(QString id)
 void SingleDownloadManager::sumDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 {
     SingleDownloadTask *task=qobject_cast<SingleDownloadTask*>(sender());
-    if(!task)
+    if(!task){
+        qDebug()<<__FUNCTION__<<"fail transfer";
         return;
+    }
     int index=task->getIndex();
     progress_[index]=bytesReceived/1.0/bytesTotal;
 
     double sum=0;
     bool allDone=true;
     for(auto &i:progress_){
-        if(i!=1.0)allDone=false;
+        if(i!=1.0){
+            allDone=false;
+        }
         sum+=i/thrdNum_;
     }
     if(allDone){
         emit downloadProgress(info_.fileSize_,info_.fileSize_);
-        progress_.clear();
-        for(int i=0;i<thrds_.size();++i){
-            thrds_[i]->deleteLater();
-        }
-        thrds_.clear();
     } else {
-        emit downloadProgress((int)(sum*info_.fileSize_),info_.fileSize_);
+        emit downloadProgress((qint64)(sum*info_.fileSize_),info_.fileSize_);
     }
+}
 
+void SingleDownloadManager::sumCancelNum(QString id)
+{
+
+}
+
+void SingleDownloadManager::sumPauseNum(QString id)
+{
+    pauseNum_++;
+    if(pauseNum_==thrdNum_){
+        emit pauseSuccessed();
+    }
 }
 
 void SingleDownloadManager::createThrd(FileInfo info)
@@ -88,13 +114,19 @@ void SingleDownloadManager::createThrd(FileInfo info)
 
         progress_.append(0);
         QtConcurrent::run([this,i,l,r]{
-            SingleDownloadTask *task=new SingleDownloadTask(nullptr,l,r,url_,id_+QString::number(i),i);
+            SingleDownloadTask *task=new SingleDownloadTask(nullptr,l,r,url_,id_+QString::number(i),i,cancel_);
             connect(task,&SingleDownloadTask::downloadProgress,this,&SingleDownloadManager::sumDownloadProgress,Qt::QueuedConnection);
             mutex_.lock();
             thrds_.append(task);
             mutex_.unlock();
             QEventLoop loop;
-            connect(task,&SingleDownloadTask::finished,&loop,QEventLoop::quit);
+            connect(task,&SingleDownloadTask::destroyed,&loop,&QEventLoop::quit);
+            connect(task,&SingleDownloadTask::destroyed,[]{
+                qDebug()<<"SingleDownloadTask destory";
+            });
+            connect(task,&SingleDownloadTask::finished,this,&SingleDownloadManager::removeThrd);
+            connect(this,&SingleDownloadManager::pauseSig,task,&SingleDownloadTask::pauseDownload);
+            connect(task,&SingleDownloadTask::pauseSucceeded,this,&SingleDownloadManager::sumPauseNum);
             task->startDownload();
             loop.exec();
         });
@@ -102,6 +134,15 @@ void SingleDownloadManager::createThrd(FileInfo info)
 
 }
 
+void SingleDownloadManager::removeThrd(QString id)
+{
+    for(int i=0;i<thrds_.size();++i){
+        if(thrds_.at(i)->getId()==id){
+            thrds_.removeAt(i);
+            break;
+        }
+    }
+}
 
 void SingleDownloadManager::extractFileInfo(QNetworkReply *reply)
 {

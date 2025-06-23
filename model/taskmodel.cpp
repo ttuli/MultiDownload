@@ -25,7 +25,7 @@ QVariant TaskModel::data(const QModelIndex &index, int role) const
     if(role==SingleTask::URL)return dataList_[index.row()].url_;
     if(role==SingleTask::STATUS)return kMsgTypeToString.at(dataList_[index.row()].status_);
     if(role==SingleTask::SAVEPOSITION)return dataList_[index.row()].savePosition_;
-    if(role==SingleTask::SPEED)return formatFileSize(dataList_[index.row()].speed_);
+    if(role==SingleTask::SPEED)return formatFileSize(dataList_[index.row()].speed_)+" /s";
     if(role==SingleTask::SIZE)return formatFileSize(dataList_[index.row()].fileSize_);
 
     return QVariant();
@@ -53,6 +53,14 @@ QString TaskModel::GetName(int index)
         return "";
     }
     return dataList_.at(index).fileName_;
+}
+
+QString TaskModel::GetId(int index)
+{
+    if(index<0||index>=dataList_.size()){
+        return "";
+    }
+    return dataList_.at(index).id_;
 }
 
 bool TaskModel::addNewRow(SingleTask task,int position)
@@ -103,11 +111,18 @@ void TaskModel::updateRow(SingleTask::TaskProperties type, int position, QVarian
         return;
     }
     if(type==SingleTask::FILENAME)dataList_[position].fileName_=data.toString();
-    if(type==SingleTask::PROGRESS)dataList_[position].progress_=data.toDouble();
+    if(type==SingleTask::PROGRESS){
+        if(dataList_[position].progress_==data.toDouble())
+            return;
+        dataList_[position].progress_=data.toDouble();
+    }
     if(type==SingleTask::STATUS)dataList_[position].status_=(DownloadStatus)data.toInt();
     if(type==SingleTask::SPEED){
+        qint64 interval=qAbs(QDateTime::currentDateTime().msecsTo(dataList_[position].beginTime_));
+        if(interval==0)
+            return;
         qint64 num=data.toULongLong();
-        dataList_[position].speed_=num/1.0/qAbs(QDateTime::currentDateTime().secsTo(dataList_[position].beginTime_));
+        dataList_[position].speed_=num/1.0/interval*1000;
     }
     emit dataChanged(index(position),index(position),{type});
 }
