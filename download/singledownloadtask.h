@@ -19,7 +19,7 @@ public slots:
     void pauseDownload();
     void cancelDownload();
     void recordDownloadProgress(qint64 bytesReceived, qint64 bytesTotal);
-
+    void restartDownload();
 
     QString getId(){return id_;}
     int getIndex(){return index_;}
@@ -31,6 +31,7 @@ private:
     QNetworkReply *reply_;
     QFile file_;
 
+    qint64 constStartByte_;//记录最初的
     qint64 startByte_;
     qint64 endByte_;
     QUrl url_;
@@ -43,9 +44,10 @@ private:
 
 signals:
     void errorOccurred(QString msg);
-    void downloadProgress(qint64 bytesReceived,qint64 bytesTotal);
+    void downloadProgress(int index,qint64 bytesReceived,qint64 bytesTotal);
     void cancelSucceeded(QString id);
     void pauseSucceeded(QString id);
+    void startSucceeded(QString id);
     void finished(QString id);
 };
 

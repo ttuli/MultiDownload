@@ -31,9 +31,10 @@ public slots:
     void pause(QString id);
     void cancel(QString id);
 
-    void sumDownloadProgress(qint64 bytesReceived,qint64 bytesTotal);
+    void sumDownloadProgress(int index,qint64 bytesReceived,qint64 bytesTotal);
     void sumCancelNum(QString id);
     void sumPauseNum(QString id);
+    void sumStartNum(QString id);
 
     QString getId(){return id_;}
     QString getSavePosition(){return savePosition_;}
@@ -50,6 +51,8 @@ private:
 
     void createThrd(FileInfo info);
     void removeThrd(QString id);
+    void mergeFile();
+    void clearAllTmpFile();
 
 private:
     QString id_;
@@ -60,7 +63,7 @@ private:
     bool cancel_;
 
     int pauseNum_=0;
-    int restartNum_=0;
+    int startNum_=0;
 
     QNetworkAccessManager *manager_;
     QMimeDatabase m_mimeDatabase;

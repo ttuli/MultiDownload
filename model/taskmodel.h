@@ -11,6 +11,8 @@ enum class DownloadStatus{
     FINISHED,
     CANCELED,
     PAUSED,
+    MERGING,
+    ERROR
 };
 
 class SingleTask{
@@ -75,7 +77,10 @@ private:
         {DownloadStatus::PAUSED, "paused"},
         {DownloadStatus::CANCELED, "cancel"},
         {DownloadStatus::FINISHED, "completed"},
-        {DownloadStatus::WAITTING,"waitting"}
+        {DownloadStatus::WAITTING,"waitting"},
+        {DownloadStatus::MERGING,"merging"},
+        {DownloadStatus::ERROR,"error"}
+
     };
 };
 

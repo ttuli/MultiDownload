@@ -10,6 +10,7 @@ SingleDownloadManager::SingleDownloadManager(QObject *parent,QString id
 {
     manager_=new QNetworkAccessManager(this);
     cancel_=false;
+    startNum_=thrdNum;
 }
 
 SingleDownloadManager::~SingleDownloadManager()
@@ -42,6 +43,8 @@ void SingleDownloadManager::start(QString id)
 
 void SingleDownloadManager::restart(QString id)
 {
+    if(pauseNum_!=thrdNum_)
+        return;
     if(id!="all"&&id_!=id)
         return;
     emit restartSig();
@@ -49,6 +52,8 @@ void SingleDownloadManager::restart(QString id)
 
 void SingleDownloadManager::pause(QString id)
 {
+    if(startNum_!=thrdNum_)
+        return;
     if(id!="all"&&id_!=id)
         return;
     emit pauseSig();
@@ -61,26 +66,23 @@ void SingleDownloadManager::cancel(QString id)
         return;
 }
 
-void SingleDownloadManager::sumDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
+void SingleDownloadManager::sumDownloadProgress(int index,qint64 bytesReceived, qint64 bytesTotal)
 {
-    SingleDownloadTask *task=qobject_cast<SingleDownloadTask*>(sender());
-    if(!task){
-        qDebug()<<__FUNCTION__<<"fail transfer";
-        return;
-    }
-    int index=task->getIndex();
     progress_[index]=bytesReceived/1.0/bytesTotal;
 
     double sum=0;
     bool allDone=true;
-    for(auto &i:progress_){
-        if(i!=1.0){
+    for(auto i:progress_){
+        if((int)i!=1){
             allDone=false;
         }
         sum+=i/thrdNum_;
     }
     if(allDone){
         emit downloadProgress(info_.fileSize_,info_.fileSize_);
+        QtConcurrent::run([this]{
+            mergeFile();
+        });
     } else {
         emit downloadProgress((qint64)(sum*info_.fileSize_),info_.fileSize_);
     }
@@ -93,10 +95,19 @@ void SingleDownloadManager::sumCancelNum(QString id)
 
 void SingleDownloadManager::sumPauseNum(QString id)
 {
+    startNum_=0;
     pauseNum_++;
     if(pauseNum_==thrdNum_){
         emit pauseSuccessed();
     }
+}
+
+void SingleDownloadManager::sumStartNum(QString id)
+{
+    pauseNum_=0;
+    startNum_++;
+    if(startNum_==thrdNum_)
+        emit restartSuccessed();
 }
 
 void SingleDownloadManager::createThrd(FileInfo info)
@@ -126,7 +137,9 @@ void SingleDownloadManager::createThrd(FileInfo info)
             });
             connect(task,&SingleDownloadTask::finished,this,&SingleDownloadManager::removeThrd);
             connect(this,&SingleDownloadManager::pauseSig,task,&SingleDownloadTask::pauseDownload);
+            connect(this,&SingleDownloadManager::restartSig,task,&SingleDownloadTask::restartDownload);
             connect(task,&SingleDownloadTask::pauseSucceeded,this,&SingleDownloadManager::sumPauseNum);
+            connect(task,&SingleDownloadTask::startSucceeded,this,&SingleDownloadManager::sumStartNum);
             task->startDownload();
             loop.exec();
         });
@@ -142,6 +155,52 @@ void SingleDownloadManager::removeThrd(QString id)
             break;
         }
     }
+}
+
+void SingleDownloadManager::mergeFile()
+{
+    if(info_.suggestedFileName_==""){
+        qDebug()<<"mergeFile:未获取文件信息";
+    }
+    QFile fileSum,file;
+    fileSum.setFileName(savePosition_+"/"+info_.suggestedFileName_);
+    if(!fileSum.open(QIODevice::WriteOnly)){
+        qDebug()<<"mergeFile:合并文件失败";
+        fileSum.close();
+        clearAllTmpFile();
+        return;
+    }
+    for(int i=0;i<thrdNum_;++i){
+        QString filename=id_+QString::number(i)+".tmp";
+        file.setFileName(filename);
+        if(!file.open(QIODevice::ReadOnly)){
+            qDebug()<<"mergeFile:打开.tmp文件失败";
+            file.close();
+            fileSum.close();
+            clearAllTmpFile();
+            return;
+        }
+        fileSum.write(file.readAll());
+        file.remove();
+        file.close();
+    }
+    fileSum.close();
+    QMetaObject::invokeMethod(this,[this]{
+        emit finished();
+    });
+}
+
+void SingleDownloadManager::clearAllTmpFile()
+{
+    QFile fileSum,file;
+    fileSum.setFileName(savePosition_+"/"+info_.suggestedFileName_);
+    fileSum.remove();
+    for(int i=0;i<thrdNum_;++i){
+        QString filename=id_+QString::number(i)+".tmp";
+        file.setFileName(filename);
+        file.remove();
+    }
+    emit errorOccured("文件合并失败！");
 }
 
 void SingleDownloadManager::extractFileInfo(QNetworkReply *reply)

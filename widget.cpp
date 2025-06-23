@@ -64,20 +64,21 @@ void Widget::addTask()
 
         QString id=QUuid::createUuid().toString(QUuid::WithoutBraces);
         SingleDownloadManager *dm=new SingleDownloadManager(this,id,thrdNum,url,savePosition);
-        connect(dm,&SingleDownloadManager::errorOccured,[this,dm](QString msg){
+        connect(dm,&SingleDownloadManager::errorOccured,this,[this,dm](QString msg){
             CustomMessageBox box(this,"错误",msg,MsgType::Error);
             box.exec();
+            model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::ERROR));
             for(int i=0;i<tasks_.size();i++){
                 if(tasks_.at(i)->getId()==dm->getId()){
                     tasks_.at(i)->deleteLater();
                     tasks_.removeAt(i);
                 }
             }
-        });
+        },Qt::QueuedConnection);
         connect(dm,&SingleDownloadManager::parseFileInfo,this,[this,dm](FileInfo info){
             model_->addNewRow(SingleTask(dm->getId(),info.suggestedFileName_,dm->getSavePosition()
                                          ,dm->getUrl().toString()
-                                         ,info.fileSize_));
+                                         ,info.fileSize_),model_->rowCount());
         });
         connect(dm,&SingleDownloadManager::downloadProgress,this,[this,dm](qint64 bytesReceived,qint64 bytesTotal){
             double progress=bytesReceived/1.0/bytesTotal;
@@ -85,15 +86,7 @@ void Widget::addTask()
             model_->updateRow(SingleTask::TaskProperties::PROGRESS,dm->getId(),QVariant(rounded));
             model_->updateRow(SingleTask::TaskProperties::SPEED,dm->getId(),QVariant(bytesReceived));
             if(bytesReceived==bytesTotal){
-                model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::FINISHED));
-                for(int i=0;i<tasks_.size();++i){
-                    if(tasks_[i]->getId()==dm->getId()){
-                        dm->close();
-                        dm->deleteLater();
-                        tasks_.removeAt(i);
-                        break;
-                    }
-                }
+                model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::MERGING));
             }
         });
         connect(dm,&SingleDownloadManager::destroyed,[]{
@@ -101,6 +94,20 @@ void Widget::addTask()
         });
         connect(dm,&SingleDownloadManager::pauseSuccessed,[this,dm]{
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::PAUSED));
+        });
+        connect(dm,&SingleDownloadManager::restartSuccessed,[this,dm]{
+            model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::DOWNLOADING));
+        });
+        connect(dm,&SingleDownloadManager::finished,[this,dm]{
+            model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::FINISHED));
+            for(int i=0;i<tasks_.size();++i){
+                if(tasks_[i]->getId()==dm->getId()){
+                    dm->close();
+                    dm->deleteLater();
+                    tasks_.removeAt(i);
+                    break;
+                }
+            }
         });
         tasks_.append(dm);
         dm->start(id);
@@ -129,7 +136,7 @@ void Widget::deleteTask(QString taskID,int index)
 void Widget::startTask(QString taskID, int index)
 {
     if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
-
+        tasks_[index]->restart(taskID);
     }
 }
 

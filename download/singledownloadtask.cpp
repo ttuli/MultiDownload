@@ -15,7 +15,8 @@ SingleDownloadTask::SingleDownloadTask(QObject *parent,qint64 startByte,qint64 e
     file_.setFileName(id+".tmp");
     file_.open(QIODevice::Append);
     currentReceiveSize_=0;
-    totalSize_=0;
+    totalSize_=endByte-startByte;
+    constStartByte_=startByte;
 }
 
 SingleDownloadTask::~SingleDownloadTask()
@@ -34,6 +35,7 @@ void SingleDownloadTask::startDownload()
             return;
         }
         file_.write(reply_->readAll());
+        currentReceiveSize_=file_.size();
     });
     connect(reply_,&QNetworkReply::finished,this,[this](){
         if(reply_->error()!=QNetworkReply::NoError){
@@ -52,16 +54,18 @@ void SingleDownloadTask::startDownload()
 
 void SingleDownloadTask::pauseDownload()
 {
-    if(!reply_->isRunning())
-        return;
     if(reply_!=nullptr){
         reply_->abort();
+        reply_->deleteLater();
+        reply_=nullptr;
     }
     emit pauseSucceeded(id_);
 }
 
 void SingleDownloadTask::cancelDownload()
 {
+    if(!reply_->isRunning())
+        return;
     if(reply_!=nullptr){
         reply_->abort();
     }
@@ -70,14 +74,23 @@ void SingleDownloadTask::cancelDownload()
 
 void SingleDownloadTask::recordDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 {
-    currentReceiveSize_=bytesReceived;
-    totalSize_=bytesTotal;
-    emit downloadProgress(bytesReceived,bytesTotal);
+    emit downloadProgress(index_,currentReceiveSize_,totalSize_);
+}
+
+void SingleDownloadTask::restartDownload()
+{
+    qint64 beginbyte=startByte_+currentReceiveSize_;
+    startByte_=beginbyte;
+    startDownload();
+    emit startSucceeded(id_);
 }
 
 void SingleDownloadTask::close()
 {
     qDebug()<<"SingleDownloadTask::close";
+    if(cancel_){
+        file_.remove();
+    }
     file_.close();
     if(cancel_)
         file_.remove();

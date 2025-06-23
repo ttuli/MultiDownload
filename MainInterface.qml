@@ -350,15 +350,7 @@ Rectangle {
                                             width: parent.width * parent.parent.value
                                             height: parent.height
                                             radius: 4
-                                            color: {
-                                                switch(model_status) {
-                                                    case "completed": return successColor
-                                                    case "downloading": return primaryColor
-                                                    case "paused": return warningColor
-                                                    case "error": return errorColor
-                                                    default: return mutedTextColor
-                                                }
-                                            }
+                                            color: getColorByStatus(model_status)
                                         }
                                     }
                                 }
@@ -397,29 +389,8 @@ Rectangle {
                             // 状态
                             Text {
                                 Layout.preferredWidth: 45
-                                text: {
-                                    switch(model_status) {
-                                        case "completed": return "已完成"
-                                        case "downloading": return "下载中"
-                                        case "paused": return "暂停"
-                                        case "error": return "下载失败"
-                                        case "cancel": return "已取消"
-                                        case "waitting": return "等待中"
-                                        default: return ""
-                                    }
-                                }
-
-                                color: {
-                                    switch(model_status) {
-                                        case "completed": return successColor
-                                        case "downloading": return primaryColor
-                                        case "paused": return warningColor
-                                        case "error": return errorColor
-                                        case "cancel": return cancelledColor
-                                        case "waitting": return mutedTextColor
-                                        default: return "black"
-                                    }
-                                }
+                                text: getTextByStatus(model_status)
+                                color: getColorByStatus(model_status)
                                 font.pixelSize: 12
                             }
                         }
@@ -577,6 +548,31 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    function getColorByStatus(val){
+        switch(val) {
+            case "completed": return successColor
+            case "downloading": return primaryColor
+            case "paused": return warningColor
+            case "error": return errorColor
+            case "cancel": return cancelledColor
+            case "waitting": return mutedTextColor
+            case "merging": return "white"
+            default: return "black"
+        }
+    }
+    function getTextByStatus(val){
+        switch(val) {
+            case "completed": return "已完成"
+            case "downloading": return "下载中"
+            case "paused": return "暂停"
+            case "error": return "下载失败"
+            case "cancel": return "已取消"
+            case "waitting": return "等待中"
+            case "merging": return "合并中"
+            default: return ""
         }
     }
 }
