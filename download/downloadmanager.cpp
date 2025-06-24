@@ -153,10 +153,10 @@ void SingleDownloadManager::createThrd(FileInfo info)
             connect(task,&SingleDownloadTask::destroyed,[]{
                 qDebug()<<"SingleDownloadTask destory";
             });
-            connect(task,&SingleDownloadTask::finished,this,&SingleDownloadManager::removeThrd);
-            connect(this,&SingleDownloadManager::pauseSig,task,&SingleDownloadTask::pauseDownload);
-            connect(this,&SingleDownloadManager::restartSig,task,&SingleDownloadTask::restartDownload);
-            connect(this,&SingleDownloadManager::cancelSig,task,&SingleDownloadTask::cancelDownload);
+            connect(task,&SingleDownloadTask::finished,this,&SingleDownloadManager::removeThrd,Qt::QueuedConnection);
+            connect(this,&SingleDownloadManager::pauseSig,task,&SingleDownloadTask::pauseDownload,Qt::QueuedConnection);
+            connect(this,&SingleDownloadManager::restartSig,task,&SingleDownloadTask::restartDownload,Qt::QueuedConnection);
+            connect(this,&SingleDownloadManager::cancelSig,task,&SingleDownloadTask::cancelDownload,Qt::QueuedConnection);
             connect(task,&SingleDownloadTask::pauseSucceeded,this,&SingleDownloadManager::sumPauseNum,Qt::QueuedConnection);
             connect(task,&SingleDownloadTask::startSucceeded,this,&SingleDownloadManager::sumStartNum,Qt::QueuedConnection);
             connect(task,&SingleDownloadTask::cancelSucceeded,this,&SingleDownloadManager::sumCancelNum,Qt::QueuedConnection);
