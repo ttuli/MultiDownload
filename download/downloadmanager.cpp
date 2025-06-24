@@ -138,7 +138,7 @@ void SingleDownloadManager::createThrd(FileInfo info)
     for(int i=0;i<thrdNum_;++i){
         l=r+1;
         r=(i+1)*interval;
-        if(i==thrdNum_)
+        if(i==thrdNum_-1)
             r=info.fileSize_-1;
 
         progress_.append(0);

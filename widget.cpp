@@ -13,6 +13,7 @@
 #include <QUuid>
 #include <model/taskmodel.h>
 #include <QEventLoop>
+#include <QThreadPool>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -39,6 +40,7 @@ Widget::Widget(QWidget *parent)
     settingDialog_=nullptr;
 
     setMinimumSize(640,480);
+    QThreadPool::globalInstance()->setMaxThreadCount(16);
 }
 
 Widget::~Widget()
