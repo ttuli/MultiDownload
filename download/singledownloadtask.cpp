@@ -15,7 +15,9 @@ SingleDownloadTask::SingleDownloadTask(QObject *parent,qint64 startByte,qint64 e
     file_.setFileName(id+".tmp");
     file_.open(QIODevice::Append);
     currentReceiveSize_=0;
-    totalSize_=endByte-startByte;
+    currentFileSize_=0;
+    preReceiveSize_=0;
+    totalSize_=endByte-startByte+1;
     constStartByte_=startByte;
 }
 
@@ -35,7 +37,7 @@ void SingleDownloadTask::startDownload()
             return;
         }
         file_.write(reply_->readAll());
-        currentReceiveSize_=file_.size();
+        currentFileSize_=file_.size();
     });
     connect(reply_,&QNetworkReply::finished,this,[this](){
         if(reply_->error()!=QNetworkReply::NoError){
@@ -44,6 +46,7 @@ void SingleDownloadTask::startDownload()
             }
             return;
         }
+        qDebug()<<"reply finish 调用close()";
         close();
     },Qt::DirectConnection);
     connect(reply_,&QNetworkReply::destroyed,[]{
@@ -54,32 +57,31 @@ void SingleDownloadTask::startDownload()
 
 void SingleDownloadTask::pauseDownload()
 {
+    qDebug()<<__FUNCTION__;
     if(reply_!=nullptr){
         reply_->abort();
         reply_->deleteLater();
         reply_=nullptr;
     }
+    preReceiveSize_=currentReceiveSize_;
     emit pauseSucceeded(id_);
 }
 
 void SingleDownloadTask::cancelDownload()
 {
-    if(!reply_->isRunning())
-        return;
-    if(reply_!=nullptr){
-        reply_->abort();
-    }
+    close();
     emit cancelSucceeded(id_);
 }
 
 void SingleDownloadTask::recordDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 {
+    currentReceiveSize_=preReceiveSize_+bytesReceived;
     emit downloadProgress(index_,currentReceiveSize_,totalSize_);
 }
 
 void SingleDownloadTask::restartDownload()
 {
-    qint64 beginbyte=startByte_+currentReceiveSize_;
+    qint64 beginbyte=constStartByte_+currentFileSize_;
     startByte_=beginbyte;
     startDownload();
     emit startSucceeded(id_);
@@ -92,8 +94,6 @@ void SingleDownloadTask::close()
         file_.remove();
     }
     file_.close();
-    if(cancel_)
-        file_.remove();
     if(reply_){
         reply_->abort();
         reply_->deleteLater();

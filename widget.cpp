@@ -98,6 +98,9 @@ void Widget::addTask()
         connect(dm,&SingleDownloadManager::restartSuccessed,[this,dm]{
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::DOWNLOADING));
         });
+        connect(dm,&SingleDownloadManager::cancelSuccessed,[this,dm]{
+            model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::CANCELED));
+        });
         connect(dm,&SingleDownloadManager::finished,[this,dm]{
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::FINISHED));
             for(int i=0;i<tasks_.size();++i){
@@ -110,19 +113,25 @@ void Widget::addTask()
             }
         });
         tasks_.append(dm);
-        dm->start(id);
+        dm->start();
     }
 }
 
 void Widget::cancelTask(QString taskID,int index)
 {
-
+    if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
+        tasks_[index]->cancel();
+    } else {
+        qDebug()<<"Widget tasks_.value nullptr";
+    }
 }
 
 void Widget::pauseTask(QString taskID,int index)
 {
     if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
-        tasks_[index]->pause(taskID);
+        tasks_[index]->pause();
+    } else {
+        qDebug()<<"Widget tasks_.value nullptr";
     }
 }
 
@@ -130,14 +139,35 @@ void Widget::deleteTask(QString taskID,int index)
 {
     if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
 
+    } else {
+        qDebug()<<"Widget tasks_.value nullptr";
     }
 }
 
 void Widget::startTask(QString taskID, int index)
 {
     if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
-        tasks_[index]->restart(taskID);
+        tasks_[index]->restart();
+    } else {
+        qDebug()<<"Widget tasks_.value nullptr";
     }
+}
+
+void Widget::startAllTask()
+{
+    for(auto i:tasks_)
+        i->restart();
+}
+
+void Widget::pauseAllTask()
+{
+    for(auto i:tasks_)
+        i->pause();
+}
+
+void Widget::cancelAllTask()
+{
+
 }
 
 void Widget::doSetting()

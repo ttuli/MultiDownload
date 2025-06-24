@@ -24,6 +24,10 @@ public slots:
     void deleteTask(QString taskID,int index);
     void startTask(QString taskID,int index);
 
+    void startAllTask();
+    void pauseAllTask();
+    void cancelAllTask();
+
     void doSetting();
 
 protected:

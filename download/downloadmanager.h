@@ -6,6 +6,7 @@
 #include <QMimeDatabase>
 #include <QNetworkReply>
 #include <QMutex>
+#include <QTimer>
 #include "singledownloadtask.h"
 
 struct FileInfo {
@@ -26,10 +27,10 @@ public:
                              ,QString savePosition="");
     ~SingleDownloadManager();
 public slots:
-    void start(QString id);
-    void restart(QString id);
-    void pause(QString id);
-    void cancel(QString id);
+    void start();
+    void restart();
+    void pause();
+    void cancel();
 
     void sumDownloadProgress(int index,qint64 bytesReceived,qint64 bytesTotal);
     void sumCancelNum(QString id);
@@ -64,6 +65,9 @@ private:
 
     int pauseNum_=0;
     int startNum_=0;
+    int cancelNum_=0;
+    QTimer *clickInterval_;
+    bool clickable_=true;//避免频繁开始，暂停
 
     QNetworkAccessManager *manager_;
     QMimeDatabase m_mimeDatabase;
@@ -81,6 +85,8 @@ signals:
     void pauseSuccessed();
     void restartSig();
     void restartSuccessed();
+    void cancelSig();
+    void cancelSuccessed();
 };
 
 #endif // DOWNLOADMANAGER_H

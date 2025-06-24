@@ -11,6 +11,13 @@ SingleDownloadManager::SingleDownloadManager(QObject *parent,QString id
     manager_=new QNetworkAccessManager(this);
     cancel_=false;
     startNum_=thrdNum;
+    pauseNum_=0;
+    clickInterval_=new QTimer(this);
+    clickInterval_->setInterval(700);
+    connect(clickInterval_,&QTimer::timeout,this,[this]{
+        clickInterval_->stop();
+        clickable_=true;
+    });
 }
 
 SingleDownloadManager::~SingleDownloadManager()
@@ -18,6 +25,7 @@ SingleDownloadManager::~SingleDownloadManager()
 
 void SingleDownloadManager::close()
 {
+    cancel_=true;
     for(int i=0;i<thrds_.size();i++){
         thrds_[i]->close();
     }
@@ -25,10 +33,8 @@ void SingleDownloadManager::close()
 }
 
 
-void SingleDownloadManager::start(QString id)
+void SingleDownloadManager::start()
 {
-    if(id!="all"&&id_!=id)
-        return;
     QNetworkRequest request(url_);
     QNetworkReply *reply=manager_->head(request);
     connect(reply,&QNetworkReply::finished,[this,reply]{
@@ -41,29 +47,38 @@ void SingleDownloadManager::start(QString id)
     });
 }
 
-void SingleDownloadManager::restart(QString id)
+void SingleDownloadManager::restart()
 {
-    if(pauseNum_!=thrdNum_)
+    if(!clickable_)
         return;
-    if(id!="all"&&id_!=id)
+    clickable_=false;
+    clickInterval_->start();
+    cancel_=false;
+    if(pauseNum_!=thrdNum_)
         return;
     emit restartSig();
 }
 
-void SingleDownloadManager::pause(QString id)
+void SingleDownloadManager::pause()
 {
+    if(!clickable_)
+        return;
+    clickable_=false;
+    clickInterval_->start();
     if(startNum_!=thrdNum_)
         return;
-    if(id!="all"&&id_!=id)
-        return;
+    cancel_=false;
     emit pauseSig();
-    cancel_=true;
 }
 
-void SingleDownloadManager::cancel(QString id)
+void SingleDownloadManager::cancel()
 {
-    if(id!="all"&&id_!=id)
+    if(!clickable_)
         return;
+    clickable_=false;
+    clickInterval_->start();
+    cancel_=true;
+    emit cancelSig();
 }
 
 void SingleDownloadManager::sumDownloadProgress(int index,qint64 bytesReceived, qint64 bytesTotal)
@@ -73,7 +88,7 @@ void SingleDownloadManager::sumDownloadProgress(int index,qint64 bytesReceived, 
     double sum=0;
     bool allDone=true;
     for(auto i:progress_){
-        if((int)i!=1){
+        if(qAbs(i-1.0)>1e-3){
             allDone=false;
         }
         sum+=i/thrdNum_;
@@ -90,7 +105,10 @@ void SingleDownloadManager::sumDownloadProgress(int index,qint64 bytesReceived, 
 
 void SingleDownloadManager::sumCancelNum(QString id)
 {
-
+    cancelNum_++;
+    if(cancelNum_==thrdNum_){
+        emit cancelSuccessed();
+    }
 }
 
 void SingleDownloadManager::sumPauseNum(QString id)
@@ -138,8 +156,10 @@ void SingleDownloadManager::createThrd(FileInfo info)
             connect(task,&SingleDownloadTask::finished,this,&SingleDownloadManager::removeThrd);
             connect(this,&SingleDownloadManager::pauseSig,task,&SingleDownloadTask::pauseDownload);
             connect(this,&SingleDownloadManager::restartSig,task,&SingleDownloadTask::restartDownload);
-            connect(task,&SingleDownloadTask::pauseSucceeded,this,&SingleDownloadManager::sumPauseNum);
-            connect(task,&SingleDownloadTask::startSucceeded,this,&SingleDownloadManager::sumStartNum);
+            connect(this,&SingleDownloadManager::cancelSig,task,&SingleDownloadTask::cancelDownload);
+            connect(task,&SingleDownloadTask::pauseSucceeded,this,&SingleDownloadManager::sumPauseNum,Qt::QueuedConnection);
+            connect(task,&SingleDownloadTask::startSucceeded,this,&SingleDownloadManager::sumStartNum,Qt::QueuedConnection);
+            connect(task,&SingleDownloadTask::cancelSucceeded,this,&SingleDownloadManager::sumCancelNum,Qt::QueuedConnection);
             task->startDownload();
             loop.exec();
         });
@@ -257,8 +277,12 @@ void SingleDownloadManager::extractFileInfo(QNetworkReply *reply)
 
 
     info.suggestedFileName_ = sanitizeFileName(suggestedName);
-    info.isValid_ = true;
     reply->deleteLater();
+    if(info.suggestedFileName_==""){
+        emit errorOccured("获取文件信息失败!");
+        return;
+    }
+    info.isValid_ = true;
     createThrd(info);
 }
 

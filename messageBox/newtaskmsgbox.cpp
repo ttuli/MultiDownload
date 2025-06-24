@@ -26,4 +26,5 @@ void NewTaskMsgBox::saveDownloadInfo(QString url, QString savePosiotion,int thrd
     url_=url;
     savePosition_=savePosiotion;
     thrdNum_=thrdNum;
+    qDebug()<<thrdNum;
 }

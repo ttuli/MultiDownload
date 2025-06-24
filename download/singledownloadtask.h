@@ -38,6 +38,8 @@ private:
     QString id_;
     qint64 totalSize_;
     qint64 currentReceiveSize_;
+    qint64 preReceiveSize_;
+    qint64 currentFileSize_;
     int index_;
     bool &cancel_;
     static bool constValue;

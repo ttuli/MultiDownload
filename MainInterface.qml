@@ -151,12 +151,35 @@ Rectangle {
                     }
 
                     onClicked: {
-                        for (let i = 0; i < taskModel.count; i++) {
-                            let item = taskModel.get(i)
-                            if (item.status !== "completed") {
-                                taskModel.setProperty(i, "status", "downloading")
-                            }
+                        rootWidget.startAllTask()
+                    }
+                }
+
+                //全部暂停
+                Button {
+                    id: pauseAllBtn
+                    Layout.preferredWidth: 100
+                    Layout.fillHeight: true
+
+                    background: Rectangle {
+                        color: pauseAllBtn.hovered ? Qt.darker(warningColor, 1.1) : warningColor
+                        radius: 8
+
+                        Behavior on color {
+                            ColorAnimation { duration: 200 }
                         }
+                    }
+
+                    contentItem: Text {
+                        text: "全部暂停"
+                        color: backgroundColor
+                        font.pixelSize: 14
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    onClicked: {
+                        rootWidget.pauseAllTask()
                     }
                 }
 
@@ -184,10 +207,7 @@ Rectangle {
                     }
 
                     onClicked: {
-                        for (let i = 0; i < taskModel.count; i++) {
-                            taskModel.setProperty(i, "status", "paused")
-                            taskModel.setProperty(i, "speed", "0 B/s")
-                        }
+                        rootWidget.cancelAllTask()
                     }
                 }
             }
@@ -335,6 +355,11 @@ Rectangle {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 8
                                     value: model_progress/100;
+                                    visible: {
+                                        if(model_status==="cancel")
+                                            return false
+                                        return true
+                                    }
 
                                     background: Rectangle {
                                         color: {
@@ -358,6 +383,11 @@ Rectangle {
                                 Text {
                                     text: {
                                         return model_progress + "%"
+                                    }
+                                    visible: {
+                                        if(model_status==="cancel")
+                                            return false
+                                        return true
                                     }
 
                                     color: textColor
@@ -445,7 +475,7 @@ Rectangle {
                     }
 
                     onClicked: {
-                        if (downloadList.selectedIndex >= 0) {
+                        if (downloadList.selectedIndex >= 0&&model_status==="paused") {
                             // taskModel.setProperty(downloadList.selectedIndex, "status", "downloading")
                             rootWidget.startTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
                         }
@@ -476,9 +506,7 @@ Rectangle {
                     }
 
                     onClicked: {
-                        if (downloadList.selectedIndex >= 0) {
-                            // taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
-                            // taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
+                        if (downloadList.selectedIndex >= 0&&model_status==="downloading") {
                             rootWidget.pauseTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
                         }
                     }
