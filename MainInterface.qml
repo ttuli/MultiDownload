@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import "messageBox"
 
 Rectangle {
     id: window
@@ -475,7 +476,7 @@ Rectangle {
                     }
 
                     onClicked: {
-                        if (downloadList.selectedIndex >= 0&&model_status==="paused") {
+                        if (downloadList.selectedIndex >= 0) {
                             // taskModel.setProperty(downloadList.selectedIndex, "status", "downloading")
                             rootWidget.startTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
                         }
@@ -506,7 +507,7 @@ Rectangle {
                     }
 
                     onClicked: {
-                        if (downloadList.selectedIndex >= 0&&model_status==="downloading") {
+                        if (downloadList.selectedIndex >= 0) {
                             rootWidget.pauseTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
                         }
                     }
@@ -539,39 +540,7 @@ Rectangle {
                         if (downloadList.selectedIndex >= 0) {
                             // taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
                             // taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
-                        }
-                    }
-                }
-
-                Button {
-                    id: deleteBtn
-                    Layout.preferredWidth: 80
-                    Layout.preferredHeight: 35
-                    enabled: downloadList.selectedIndex >= 0
-
-                    background: Rectangle {
-                        color: deleteBtn.enabled ? (deleteBtn.hovered ? Qt.darker(errorColor, 1.2) : Qt.darker(errorColor, 1.1)) : Qt.rgba(errorColor.r, errorColor.g, errorColor.b, 0.3)
-                        radius: 6
-                        border.width: 1
-                        border.color: errorColor
-
-                        Behavior on color {
-                            ColorAnimation { duration: 200 }
-                        }
-                    }
-
-                    contentItem: Text {
-                        text: "删除"
-                        color: deleteBtn.enabled ? "white" : mutedTextColor
-                        font.pixelSize: 12
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    onClicked: {
-                        if (downloadList.selectedIndex >= 0) {
-                            // taskModel.remove(downloadList.selectedIndex)
-                            // downloadList.selectedIndex = -1
+                            rootWidget.cancelTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
                         }
                     }
                 }
@@ -602,5 +571,14 @@ Rectangle {
             case "merging": return "合并中"
             default: return ""
         }
+    }
+
+    function showMsg(msg,type,duration){
+        msgPopup.showMessage(msg,type,duration);
+    }
+
+    MessagePopup{
+        id:msgPopup
+        anchors.fill: parent;
     }
 }

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/loading.png</file>
+        <file>res/success.svg</file>
+        <file>res/wrong.svg</file>
+    </qresource>
+</RCC>

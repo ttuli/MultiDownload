@@ -258,6 +258,7 @@ Rectangle {
                                 id: pathInput
                                 anchors.fill: parent
                                 anchors.margins: 8
+                                clip: true
                                 text: settings.downloadPath
                                 font.pixelSize: 12
                                 color: "#333333"

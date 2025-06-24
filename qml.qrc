@@ -6,5 +6,6 @@
         <file>messageBox/NewTaskBox.qml</file>
         <file>setting/SettingDialog.qml</file>
         <file>messageBox/CusComboBox.qml</file>
+        <file>messageBox/MessagePopup.qml</file>
     </qresource>
 </RCC>

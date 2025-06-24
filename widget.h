@@ -9,6 +9,12 @@
 #include "setting/settingdialog.h"
 #include "download/downloadmanager.h"
 
+enum class TopMsgPopType{
+    Loading=0,
+    Success=1,
+    Fail=2
+};
+
 class Widget : public QWidget
 {
     Q_OBJECT
@@ -21,7 +27,6 @@ public slots:
     void addTask();
     void cancelTask(QString taskID,int index);
     void pauseTask(QString taskID,int index);
-    void deleteTask(QString taskID,int index);
     void startTask(QString taskID,int index);
 
     void startAllTask();
@@ -29,6 +34,7 @@ public slots:
     void cancelAllTask();
 
     void doSetting();
+    void popTopMsg(QString msg,TopMsgPopType type,int duration=1200);
 
 protected:
     void closeEvent(QCloseEvent*) override;

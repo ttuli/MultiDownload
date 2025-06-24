@@ -194,7 +194,7 @@ void SingleDownloadManager::mergeFile()
         QString filename=id_+QString::number(i)+".tmp";
         file.setFileName(filename);
         if(!file.open(QIODevice::ReadOnly)){
-            qDebug()<<"mergeFile:打开.tmp文件失败";
+            qDebug()<<"mergeFile:打开.tmp文件失败"<<file.errorString();
             file.close();
             fileSum.close();
             clearAllTmpFile();
