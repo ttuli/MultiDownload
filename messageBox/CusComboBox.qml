@@ -5,11 +5,14 @@ import QtQuick.Controls.Basic
 Item
 {
     property int currentValue: thrdInput.currentValue;
+    property int currentIndex_:1
+    property var model_: ["1","4","8","16"]
+
     ComboBox {
         id: thrdInput
         anchors.fill: parent
-        model: ["1", "4", "8", "16"]
-        currentIndex: 1
+        model: model_
+        currentIndex: currentIndex_
 
         font.pixelSize: 14
 

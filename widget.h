@@ -35,9 +35,10 @@ public slots:
 
     void doSetting();
     void popTopMsg(QString msg,TopMsgPopType type,int duration=1200);
+    void removeTask(QString id);
 
 protected:
-    void closeEvent(QCloseEvent*) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private:
     QQuickWidget *mainInterface_;

@@ -3,6 +3,7 @@
 #include "messageBox/custommessagebox.h"
 #include "download/downloadmanager.h"
 #include "setting/settingdialog.h"
+#include "setting/settingstruct.h"
 #include <QHBoxLayout>
 #include <QQmlContext>
 #include <QQuickItem>
@@ -70,17 +71,14 @@ void Widget::addTask()
             CustomMessageBox box(this,"错误",msg,MsgType::Error);
             box.exec();
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::ERROR));
-            for(int i=0;i<tasks_.size();i++){
-                if(tasks_.at(i)->getId()==dm->getId()){
-                    tasks_.at(i)->deleteLater();
-                    tasks_.removeAt(i);
-                }
-            }
+            removeTask(dm->getId());
         },Qt::QueuedConnection);
         connect(dm,&SingleDownloadManager::parseFileInfo,this,[this,dm](FileInfo info){
             model_->addNewRow(SingleTask(dm->getId(),info.suggestedFileName_,dm->getSavePosition()
                                          ,dm->getUrl().toString()
                                          ,info.fileSize_),model_->rowCount());
+            if(tasks_.size()<=SettingStruct::getInstance()->maxConcurrent())
+            dm->createThrd();
         });
         connect(dm,&SingleDownloadManager::downloadProgress,this,[this,dm](qint64 bytesReceived,qint64 bytesTotal){
             double progress=bytesReceived/1.0/bytesTotal;
@@ -101,18 +99,13 @@ void Widget::addTask()
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::DOWNLOADING));
         });
         connect(dm,&SingleDownloadManager::cancelSuccessed,[this,dm]{
+            removeTask(dm->getId());
+            popTopMsg("取消成功",TopMsgPopType::Success);
             //model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::CANCELED));
         });
         connect(dm,&SingleDownloadManager::finished,[this,dm]{
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::FINISHED));
-            for(int i=0;i<tasks_.size();++i){
-                if(tasks_[i]->getId()==dm->getId()){
-                    dm->close();
-                    dm->deleteLater();
-                    tasks_.removeAt(i);
-                    break;
-                }
-            }
+            removeTask(dm->getId());
         });
         tasks_.append(dm);
         dm->start();
@@ -123,8 +116,6 @@ void Widget::cancelTask(QString taskID,int index)
 {
     if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
         tasks_[index]->cancel();
-        tasks_.removeAt(index);
-        model_->removeARow(taskID);
     } else {
         qDebug()<<"Widget tasks_.value nullptr";
     }
@@ -166,17 +157,15 @@ void Widget::cancelAllTask()
     if(w.exec()!=QDialog::Accepted)
         return;
     int size=tasks_.size();
-    for(auto i:tasks_){
-        i->cancel();
-        model_->removeARow(i->getId());
-    }
-    if(size)
-        popTopMsg("成功取消"+QString::number(size)+"个任务",TopMsgPopType::Success);
+    for(int i=0;i<tasks_.size();++i){
+        cancelTask(tasks_.at(i)->getId(),i);
+    }  
 }
 
 void Widget::doSetting()
 {
     if(settingDialog_!=nullptr){
+        settingDialog_->show();
         settingDialog_->activateWindow();
         return;
     }
@@ -195,12 +184,30 @@ void Widget::popTopMsg(QString msg, TopMsgPopType type, int duration)
                               ,Q_ARG(QVariant,duration));
 }
 
-void Widget::closeEvent(QCloseEvent *)
+void Widget::removeTask(QString id)
+{
+    for(int i=0;i<tasks_.size();++i){
+        if(tasks_[i]->getId()==id){
+            tasks_[i]->close();
+            tasks_[i]->deleteLater();
+            tasks_.removeAt(i);
+            break;
+        }
+    }
+    for(int i=0;i<tasks_.size()&&i<SettingStruct::getInstance()->maxConcurrent();++i){
+        if(!tasks_[i]->isRunning())
+            tasks_[i]->createThrd();
+    }
+}
+
+void Widget::closeEvent(QCloseEvent *event)
 {
     if(tasks_.size()){
         CustomMessageBox w(this,"警告","有正在执行的任务，确定退出吗?",MsgType::Waring);
-        if(w.exec()!=QDialog::Accepted)
+        if(w.exec()!=QDialog::Accepted){
+            event->ignore();
             return;
+        }
     }
     for(auto i:tasks_){
         i->close();

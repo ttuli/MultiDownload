@@ -7,20 +7,27 @@
 class SettingDialog : public QWidget
 {
     Q_OBJECT
+    Q_PROPERTY(bool changeNotSave READ changeNotSave WRITE setChangeNotSave NOTIFY changeNotSaveChanged FINAL)
 public:
     SettingDialog(QWidget *parent=nullptr);
 
 public slots:
-    void onConfirm();
-    void onReject();
-    void setConfig(QVariantMap &config);
+    bool changeNotSave(){return changeNotSave_;}
+    void setChangeNotSave(bool val){
+        changeNotSave_=val;
+        emit changeNotSaveChanged();
+    }
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
+    void showEvent(QShowEvent*) override;
 
 private:
     QQuickWidget *interface_;
 
-    static QString configName;
-private:
-    void readConfig();
+    bool changeNotSave_=false;
+signals:
+    void changeNotSaveChanged();
 };
 
 #endif // SETTINGDIALOG_H

@@ -538,6 +538,7 @@ Rectangle {
 
                     onClicked: {
                         if (downloadList.selectedIndex >= 0) {
+                            downloadList.selectedIndex=-1
                             // taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
                             // taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
                             rootWidget.cancelTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)

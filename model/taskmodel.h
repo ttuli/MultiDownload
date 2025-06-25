@@ -31,7 +31,7 @@ public:
         :id_(id),fileName_(fileName),url_(url),savePosition_(savePosition),fileSize_(fileSize)
     {
         progress_=0;
-        status_=DownloadStatus::DOWNLOADING;
+        status_=DownloadStatus::WAITTING;
         beginTime_=QDateTime::currentDateTime();
     }
     SingleTask(){}

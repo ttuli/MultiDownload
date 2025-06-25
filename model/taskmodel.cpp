@@ -112,6 +112,8 @@ void TaskModel::updateRow(SingleTask::TaskProperties type, int position, QVarian
     }
     if(type==SingleTask::FILENAME)dataList_[position].fileName_=data.toString();
     if(type==SingleTask::PROGRESS){
+        if(dataList_[position].status_!=DownloadStatus::DOWNLOADING)
+            updateRow(SingleTask::STATUS,position,(int)DownloadStatus::DOWNLOADING);
         if(dataList_[position].progress_==data.toDouble())
             return;
         dataList_[position].progress_=data.toDouble();

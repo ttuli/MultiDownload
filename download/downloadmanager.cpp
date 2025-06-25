@@ -108,6 +108,7 @@ void SingleDownloadManager::sumCancelNum(QString id)
     cancelNum_++;
     if(cancelNum_==thrdNum_){
         emit cancelSuccessed();
+        running_=false;
     }
 }
 
@@ -117,6 +118,7 @@ void SingleDownloadManager::sumPauseNum(QString id)
     pauseNum_++;
     if(pauseNum_==thrdNum_){
         emit pauseSuccessed();
+        running_=false;
     }
 }
 
@@ -124,22 +126,23 @@ void SingleDownloadManager::sumStartNum(QString id)
 {
     pauseNum_=0;
     startNum_++;
-    if(startNum_==thrdNum_)
+    if(startNum_==thrdNum_){
         emit restartSuccessed();
+        running_=true;
+    }
 }
 
-void SingleDownloadManager::createThrd(FileInfo info)
+void SingleDownloadManager::createThrd()
 {
-    emit parseFileInfo(info);
-    info_=info;
-    qint64 interval=info.fileSize_/thrdNum_;
+    running_=true;
+    qint64 interval=info_.fileSize_/thrdNum_;
     qint64 l=0;
     qint64 r=-1;
     for(int i=0;i<thrdNum_;++i){
         l=r+1;
         r=(i+1)*interval;
         if(i==thrdNum_-1)
-            r=info.fileSize_-1;
+            r=info_.fileSize_-1;
 
         progress_.append(0);
         QtConcurrent::run([this,i,l,r]{
@@ -283,7 +286,8 @@ void SingleDownloadManager::extractFileInfo(QNetworkReply *reply)
         return;
     }
     info.isValid_ = true;
-    createThrd(info);
+    info_=info;
+    emit parseFileInfo(info);
 }
 
 QString SingleDownloadManager::extractFileNameFromUrl(const QUrl &url)

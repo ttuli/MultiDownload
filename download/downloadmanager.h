@@ -31,6 +31,7 @@ public slots:
     void restart();
     void pause();
     void cancel();
+    void createThrd();
 
     void sumDownloadProgress(int index,qint64 bytesReceived,qint64 bytesTotal);
     void sumCancelNum(QString id);
@@ -40,6 +41,8 @@ public slots:
     QString getId(){return id_;}
     QString getSavePosition(){return savePosition_;}
     QUrl getUrl(){return url_;}
+    bool isRunning(){return running_;}
+    FileInfo getInfo(){return info_;}
 
     void close();
 
@@ -50,7 +53,6 @@ private:
     QString extractFileNameFromContentDisposition(const QString &contentDisposition);
     QString extractFileNameFromUrl(const QUrl &url);
 
-    void createThrd(FileInfo info);
     void removeThrd(QString id);
     void mergeFile();
     void clearAllTmpFile();
@@ -62,6 +64,7 @@ private:
     QString savePosition_;
     FileInfo info_;
     bool cancel_;
+    bool running_=false;
 
     int pauseNum_=0;
     int startNum_=0;

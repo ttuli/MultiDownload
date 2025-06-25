@@ -2,126 +2,13 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Dialogs
+import Qt.labs.platform
+import QtQuick.LocalStorage
+import "../messageBox"
 
 Rectangle {
     id: root
-    width: 480
-    height: 580
-    color: "#f5f5f5"
-
-    // 公共API函数
-    function setDownloadSettings(config) {
-        if (config.downloadPath !== undefined) {
-            settings.downloadPath = config.downloadPath
-            pathInput.text = config.downloadPath
-        }
-        if (config.soundEnabled !== undefined) {
-            settings.soundEnabled = config.soundEnabled
-        }
-        if (config.notificationEnabled !== undefined) {
-            settings.notificationEnabled = config.notificationEnabled
-        }
-        if (config.maxConcurrent !== undefined) {
-            settings.maxConcurrent = config.maxConcurrent
-            concurrentInput.text = config.maxConcurrent.toString()
-        }
-        if (config.speedLimit !== undefined) {
-            settings.speedLimit = config.speedLimit
-            speedInput.text = config.speedLimit === 0 ? "无限制" : config.speedLimit.toString()
-        }
-        if (config.autoStart !== undefined) {
-            settings.autoStart = config.autoStart
-        }
-        if (config.detectDuplicate !== undefined) {
-            settings.detectDuplicate = config.detectDuplicate
-        }
-        if (config.deleteTempFiles !== undefined) {
-            settings.deleteTempFiles = config.deleteTempFiles
-        }
-    }
-
-    function getDownloadSettings() {
-        return {
-            downloadPath: settings.downloadPath,
-            soundEnabled: settings.soundEnabled,
-            notificationEnabled: settings.notificationEnabled,
-            maxConcurrent: settings.maxConcurrent,
-            speedLimit: settings.speedLimit,
-            autoStart: settings.autoStart,
-            detectDuplicate: settings.detectDuplicate,
-            deleteTempFiles: settings.deleteTempFiles
-        }
-    }
-
-    function resetToDefaults() {
-        setDownloadSettings({
-            downloadPath: "C:/Downloads",
-            soundEnabled: true,
-            notificationEnabled: true,
-            maxConcurrent: 3,
-            speedLimit: 0,
-            autoStart: false,
-            detectDuplicate: true,
-            deleteTempFiles: false
-        })
-    }
-
-    // 单独设置某个选项的便捷函数
-    function setDownloadPath(path) {
-        settings.downloadPath = path
-        pathInput.text = path
-    }
-
-    function setSoundEnabled(enabled) {
-        settings.soundEnabled = enabled
-    }
-
-    function setNotificationEnabled(enabled) {
-        settings.notificationEnabled = enabled
-    }
-
-    function setMaxConcurrent(count) {
-        settings.maxConcurrent = count
-        concurrentInput.text = count.toString()
-    }
-
-    function setSpeedLimit(limit) {
-        settings.speedLimit = limit
-        speedInput.text = limit === 0 ? "无限制" : limit.toString()
-    }
-
-    function setAutoStart(enabled) {
-        settings.autoStart = enabled
-    }
-
-    function setDetectDuplicate(enabled) {
-        settings.detectDuplicate = enabled
-    }
-
-    function setDeleteTempFiles(enabled) {
-        settings.deleteTempFiles = enabled
-    }
-
-    // 信号，当设置改变时发出
-    signal settingsChanged(var newSettings)
-
-    // 监听设置变化
-    onSettingsChanged: function(newSettings) {
-        console.log("设置已更改:", JSON.stringify(newSettings))
-    }
-
-    // 内部状态管理
-    QtObject {
-        id: settings
-        property string downloadPath: "C:/Downloads"
-        property bool soundEnabled: true
-        property bool notificationEnabled: true
-        property int maxConcurrent: 3
-        property int speedLimit: 0
-        property bool autoStart: false
-        property bool detectDuplicate: true
-        property bool deleteTempFiles: false
-    }
+    color: "#f5f5f5";
 
     // 自定义开关组件
     component CustomSwitch: Rectangle {
@@ -187,6 +74,43 @@ Rectangle {
         }
     }
 
+    QtObject{
+        id:tmpConfig
+        property string downloadPath
+        property bool soundEnabled
+        property bool notificationEnabled
+        property int maxConcurrent
+        property int downloadThrd
+        onDownloadPathChanged: {
+            rootWidget.changeNotSave=true
+        }
+        onSoundEnabledChanged: {
+            rootWidget.changeNotSave=true
+        }
+        onNotificationEnabledChanged: {
+            rootWidget.changeNotSave=true
+        }
+        onDownloadThrdChanged: {
+            rootWidget.changeNotSave=true
+        }
+        onMaxConcurrentChanged: {
+            rootWidget.changeNotSave=true
+        }
+    }
+
+    Component.onCompleted: {
+        init()
+    }
+
+    function init(){
+        tmpConfig.downloadPath=config.downloadPath;
+        tmpConfig.soundEnabled=config.soundEnabled;
+        tmpConfig.notificationEnabled=config.notificationEnabled;
+        tmpConfig.maxConcurrent=config.maxConcurrent;
+        tmpConfig.downloadThrd=config.downloadThrd;
+        rootWidget.setChangeNotSave(false)
+    }
+
     // 标题栏
     Rectangle {
         id: titleBar
@@ -224,7 +148,7 @@ Rectangle {
             // 下载路径设置
             Rectangle {
                 Layout.fillWidth: true
-                height: 80
+                height: 95
                 color: "white"
                 radius: 8
                 border.color: "#e0e0e0"
@@ -259,12 +183,12 @@ Rectangle {
                                 anchors.fill: parent
                                 anchors.margins: 8
                                 clip: true
-                                text: settings.downloadPath
+                                readOnly: true
+                                text: config.downloadPath
                                 font.pixelSize: 12
                                 color: "#333333"
                                 verticalAlignment: TextInput.AlignVCenter
                                 selectByMouse: true
-                                onTextChanged: settings.downloadPath = text
                             }
                         }
 
@@ -303,8 +227,8 @@ Rectangle {
 
                         CustomSwitch {
                             id: soundSwitch
-                            checked: settings.soundEnabled
-                            onToggled: settings.soundEnabled = checked
+                            checked: tmpConfig.soundEnabled
+                            onToggled: tmpConfig.soundEnabled = checked
                         }
 
                         Text {
@@ -320,8 +244,8 @@ Rectangle {
 
                         CustomSwitch {
                             id: notificationSwitch
-                            checked: settings.notificationEnabled
-                            onToggled: settings.notificationEnabled = checked
+                            checked: tmpConfig.notificationEnabled
+                            onToggled: tmpConfig.notificationEnabled = checked
                         }
 
                         Text {
@@ -359,6 +283,46 @@ Rectangle {
                         spacing: 10
 
                         Text {
+                            text: "默认下载线程数"
+                            font.pixelSize: 12
+                            color: "#666666"
+                        }
+
+                        Rectangle {
+                            width: 100
+                            height: 30
+                            border.color: "#d0d0d0"
+                            border.width: 1
+                            radius: 4
+                            color: "transparent"
+
+                            CusComboBox{
+                                id:downloadThrdBox
+                                anchors.centerIn: parent
+                                width: 100
+                                height: 35
+                                currentIndex_: {
+                                    if(tmpConfig.downloadThrd===1)
+                                        return 0
+                                    if(tmpConfig.downloadThrd===4)
+                                        return 1
+                                    if(tmpConfig.downloadThrd===8)
+                                        return 2
+                                    if(tmpConfig.downloadThrd===16)
+                                        return 3
+                                }
+                                onCurrentValueChanged: {
+                                    tmpConfig.downloadThrd=currentValue;
+                                }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+
+                        Text {
                             text: "最大同时下载数："
                             font.pixelSize: 12
                             color: "#666666"
@@ -370,129 +334,25 @@ Rectangle {
                             border.color: "#d0d0d0"
                             border.width: 1
                             radius: 4
+                            color: "transparent"
 
-                            TextInput {
-                                id: concurrentInput
+                            CusComboBox{
+                                id:maxConcurentBox
                                 anchors.centerIn: parent
-                                text: settings.maxConcurrent.toString()
-                                font.pixelSize: 12
-                                color: "#333333"
-                                validator: IntValidator { bottom: 1; top: 10 }
-                                onTextChanged: {
-                                    if (text !== "") {
-                                        settings.maxConcurrent = parseInt(text)
-                                    }
+                                width: 100
+                                height: 35
+                                model_: ["1","2"]
+                                currentIndex_: {
+                                    if(tmpConfig.maxConcurrent===2)
+                                        return 1
+                                    if(tmpConfig.maxConcurrent===1)
+                                        return 0
+                                }
+
+                                onCurrentValueChanged: {
+                                    tmpConfig.maxConcurrent=currentValue;
                                 }
                             }
-                        }
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-
-                        Text {
-                            text: "下载速度限制 (KB/s)："
-                            font.pixelSize: 12
-                            color: "#666666"
-                        }
-
-                        Rectangle {
-                            width: 120
-                            height: 30
-                            border.color: "#d0d0d0"
-                            border.width: 1
-                            radius: 4
-
-                            TextInput {
-                                id: speedInput
-                                anchors.centerIn: parent
-                                text: settings.speedLimit === 0 ? "无限制" : settings.speedLimit.toString()
-                                font.pixelSize: 12
-                                color: "#333333"
-                                validator: IntValidator { bottom: 0; top: 10000 }
-                                onTextChanged: {
-                                    if (text === "无限制" || text === "") {
-                                        settings.speedLimit = 0
-                                    } else {
-                                        settings.speedLimit = parseInt(text) || 0
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-
-                        CustomSwitch {
-                            id: autoStartSwitch
-                            checked: settings.autoStart
-                            onToggled: settings.autoStart = checked
-                        }
-
-                        Text {
-                            text: "自动开始下载"
-                            font.pixelSize: 12
-                            color: "#666666"
-                        }
-                    }
-                }
-            }
-
-            // 文件管理设置
-            Rectangle {
-                Layout.fillWidth: true
-                height: 120
-                color: "white"
-                radius: 8
-                border.color: "#e0e0e0"
-                border.width: 1
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 15
-                    spacing: 12
-
-                    Text {
-                        text: "文件管理"
-                        font.pixelSize: 14
-                        font.weight: Font.Medium
-                        color: "#333333"
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-
-                        CustomSwitch {
-                            id: duplicateSwitch
-                            checked: settings.detectDuplicate
-                            onToggled: settings.detectDuplicate = checked
-                        }
-
-                        Text {
-                            text: "检测重复文件"
-                            font.pixelSize: 12
-                            color: "#666666"
-                        }
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-
-                        CustomSwitch {
-                            id: deleteSwitch
-                            checked: settings.deleteTempFiles
-                            onToggled: settings.deleteTempFiles = checked
-                        }
-
-                        Text {
-                            text: "下载完成后删除临时文件"
-                            font.pixelSize: 12
-                            color: "#666666"
                         }
                     }
                 }
@@ -519,8 +379,11 @@ Rectangle {
             buttonColor: "#f5f5f5"
             textColor: "#666666"
             onClicked: {
-                resetToDefaults()
-                root.settingsChanged(getDownloadSettings())
+                tmpConfig.downloadPath=new URL(StandardPaths.standardLocations(StandardPaths.DownloadLocation)[0]).pathname.substring(1);
+                tmpConfig.downloadThrd=4;
+                tmpConfig.notificationEnabled=true
+                tmpConfig.soundEnabled=true
+                tmpConfig.maxConcurrent=2
             }
         }
 
@@ -528,25 +391,28 @@ Rectangle {
             text: "取消"
             buttonColor: "#f5f5f5"
             textColor: "#666666"
+            onClicked: {
+                rootWidget.setChangeNotSave(false)
+                rootWidget.close()
+            }
         }
 
         CustomButton {
             text: "确定"
             onClicked: {
-                var currentSettings = getDownloadSettings()
-                console.log("保存设置:")
-                console.log("下载路径:", currentSettings.downloadPath)
-                console.log("提示音:", currentSettings.soundEnabled)
-                console.log("桌面通知:", currentSettings.notificationEnabled)
-                console.log("最大下载数:", currentSettings.maxConcurrent)
-                console.log("速度限制:", currentSettings.speedLimit)
-                console.log("自动开始:", currentSettings.autoStart)
-                console.log("检测重复:", currentSettings.detectDuplicate)
-                console.log("删除临时文件:", currentSettings.deleteTempFiles)
-
-                root.settingsChanged(currentSettings)
+                saveSetting()
+                rootWidget.setChangeNotSave(false)
+                rootWidget.close()
             }
         }
+    }
+
+    function saveSetting(){
+        config.setDownloadPath(tmpConfig.downloadPath)
+        config.setDownloadThrd(tmpConfig.downloadThrd)
+        config.setMaxConcurrent(tmpConfig.maxConcurrent)
+        config.setNotificationEnabled(tmpConfig.notificationEnabled)
+        config.setSoundEnabled(tmpConfig.soundEnabled)
     }
 
     // 文件夹选择对话框
@@ -554,8 +420,8 @@ Rectangle {
         id: folderDialog
         title: "选择下载文件夹"
         onAccepted: {
-            settings.downloadPath = selectedFolder.toString().replace("file:///", "")
-            pathInput.text = settings.downloadPath
+            tmpConfig.downloadPath = folder.toString().replace("file:///", "")
+            pathInput.text = tmpConfig.downloadPath
         }
     }
 }

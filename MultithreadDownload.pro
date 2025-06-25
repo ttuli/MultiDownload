@@ -17,6 +17,7 @@ SOURCES += \
     model/taskmodel.cpp \
     setting/settingdialog.cpp \
     download/singledownloadtask.cpp \
+    setting/settingstruct.cpp \
     widget.cpp
 
 HEADERS += \
@@ -27,6 +28,7 @@ HEADERS += \
     model/taskmodel.h \
     setting/settingdialog.h \
     download/singledownloadtask.h \
+    setting/settingstruct.h \
     widget.h
 
 LIBS+= -ldwmapi

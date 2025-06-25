@@ -1,17 +1,19 @@
 #include "settingdialog.h"
+#include "settingstruct.h"
+#include "messageBox/custommessagebox.h"
 #include <QHBoxLayout>
 #include <QQmlContext>
 #include <QSettings>
 #include <QFile>
 #include <QQuickItem>
-
-QString SettingDialog::configName="setting.ini";
+#include <QStandardPaths>
 
 SettingDialog::SettingDialog(QWidget *parent)
     :QWidget(parent)
 {
     interface_=new QQuickWidget(this);
     interface_->rootContext()->setContextProperty("rootWidget",this);
+    interface_->rootContext()->setContextProperty("config",SettingStruct::getInstance());
     interface_->setResizeMode(QQuickWidget::SizeRootObjectToView);
     interface_->setSource(QUrl("qrc:/setting/SettingDialog.qml"));
 
@@ -24,52 +26,20 @@ SettingDialog::SettingDialog(QWidget *parent)
     setMinimumSize(480,580);
     setMaximumSize(480,580);
 
-    setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlag(Qt::Window);
-
-    readConfig();
 }
 
-void SettingDialog::onConfirm()
+void SettingDialog::closeEvent(QCloseEvent *event)
 {
-    close();
-}
-
-void SettingDialog::onReject()
-{
-    close();
-}
-
-//------目前8个设置项-----------
-//downloadPath 下载路径  soundEnabled 是否声音提醒
-//notificationEnabled 是否桌面通知  maxConcurrent 最大并发任务
-//speedLimit 速度限制  autoStart 自动开始下载
-//detectDuplicate 检测重复文件  deleteTempFiles 删除下载过程产生的临时文件
-//-----------------------------
-void SettingDialog::setConfig(QVariantMap &config)
-{
-    QMetaObject::invokeMethod(interface_->rootObject(),"setDownloadSettings",Q_ARG(QVariantMap,config));
-}
-
-void SettingDialog::readConfig()
-{
-    QFile file(configName);
-    if(!file.exists()){
-        file.open(QIODevice::WriteOnly);
-        file.close();
-        return;
+    if(changeNotSave_){
+        CustomMessageBox w(this,"警告","是否保存修改内容",MsgType::Waring);
+        if(w.exec()==QDialog::Accepted){
+            QMetaObject::invokeMethod(interface_->rootObject(),"saveSetting");
+        }
     }
+}
 
-    QSettings setting(configName);
-    QVariantMap config;
-    config["downloadPath"]=setting.value("downloadPath");
-    config["soundEnabled"]=setting.value("soundEnabled");
-    config["notificationEnabled"]=setting.value("notificationEnabled");
-    config["maxConcurrent"]=setting.value("maxConcurrent");
-    config["speedLimit"]=setting.value("speedLimit");
-    config["autoStart"]=setting.value("autoStart");
-    config["detectDuplicate"]=setting.value("detectDuplicate");
-    config["deleteTempFiles"]=setting.value("deleteTempFiles");
-
-    setConfig(config);
+void SettingDialog::showEvent(QShowEvent *)
+{
+    QMetaObject::invokeMethod(interface_->rootObject(),"init");
 }

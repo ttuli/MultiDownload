@@ -1,4 +1,5 @@
 #include "newtaskmsgbox.h"
+#include "setting/settingstruct.h"
 #include <QQuickWidget>
 #include <QHBoxLayout>
 #include <QQmlContext>
@@ -10,6 +11,7 @@ NewTaskMsgBox::NewTaskMsgBox(QWidget *parent)
     interface_->setResizeMode(QQuickWidget::SizeRootObjectToView);
     interface_->setAttribute(Qt::WA_AlwaysStackOnTop);
     interface_->rootContext()->setContextProperty("rootWidget",this);
+    interface_->rootContext()->setContextProperty("config",SettingStruct::getInstance());
     interface_->setSource(QUrl("qrc:/messageBox/NewTaskBox.qml"));
 
     QHBoxLayout *qhb=new QHBoxLayout(this);

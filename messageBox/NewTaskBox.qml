@@ -143,10 +143,7 @@ Rectangle {
                             color: "#212529"
                             selectByMouse: true
                             readOnly: true;
-                            text: {
-                                var path=new URL(StandardPaths.standardLocations(StandardPaths.DownloadLocation)[0]).pathname;
-                                return path.substring(1);
-                            }
+                            text: config.downloadPath
                             clip:true
                         }
                     }
@@ -214,6 +211,16 @@ Rectangle {
                         anchors.fill: parent;
                         anchors.topMargin: 5;
                         anchors.bottomMargin: 5;
+                        currentIndex_: {
+                            if(config.downloadThrd===1)
+                                return 0
+                            if(config.downloadThrd===4)
+                                return 1
+                            if(config.downloadThrd===8)
+                                return 2
+                            if(config.downloadThrd===16)
+                                return 3
+                        }
                     }
                 }
             }
