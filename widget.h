@@ -28,6 +28,7 @@ public slots:
     void cancelTask(QString taskID,int index);
     void pauseTask(QString taskID,int index);
     void startTask(QString taskID,int index);
+    void removeTaskFromView(QString taskID,int index);
 
     void startAllTask();
     void pauseAllTask();

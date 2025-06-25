@@ -538,10 +538,39 @@ Rectangle {
 
                     onClicked: {
                         if (downloadList.selectedIndex >= 0) {
-                            downloadList.selectedIndex=-1
-                            // taskModel.setProperty(downloadList.selectedIndex, "status", "paused")
-                            // taskModel.setProperty(downloadList.selectedIndex, "speed", "0 B/s")
                             rootWidget.cancelTask(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
+                            downloadList.selectedIndex=-1
+                        }
+                    }
+                }
+
+                Button {
+                    id: removeBtn
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 35
+                    enabled: downloadList.selectedIndex >= 0
+
+                    background: Rectangle {
+                        color: removeBtn.enabled ? (removeBtn.hovered ? Qt.darker(errorColor, 1.1) : errorColor) : Qt.rgba(errorColor.r, errorColor.g, errorColor.b, 0.3)
+                        radius: 6
+
+                        Behavior on color {
+                            ColorAnimation { duration: 200 }
+                        }
+                    }
+
+                    contentItem: Text {
+                        text: "移除"
+                        color: "white"
+                        font.pixelSize: 12
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    onClicked: {
+                        if (downloadList.selectedIndex >= 0) {
+                            rootWidget.removeTaskFromView(taskModel.GetId(downloadList.selectedIndex),downloadList.selectedIndex)
+                            downloadList.selectedIndex=-1
                         }
                     }
                 }

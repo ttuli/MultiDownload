@@ -101,7 +101,6 @@ void Widget::addTask()
         connect(dm,&SingleDownloadManager::cancelSuccessed,[this,dm]{
             removeTask(dm->getId());
             popTopMsg("取消成功",TopMsgPopType::Success);
-            //model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::CANCELED));
         });
         connect(dm,&SingleDownloadManager::finished,[this,dm]{
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::FINISHED));
@@ -139,6 +138,21 @@ void Widget::startTask(QString taskID, int index)
     }
 }
 
+void Widget::removeTaskFromView(QString taskID, int index)
+{
+    if(tasks_.value(index,nullptr)&&tasks_[index]->getId()==taskID){
+        if(tasks_[index]->isRunning()){
+            CustomMessageBox w(this,"警告","任务正在进行，确定删除吗？",MsgType::Waring);
+            if(w.exec()==QDialog::Rejected)
+                return;
+        }
+    } else {
+        qDebug()<<"Widget tasks_.value nullptr";
+    }
+    removeTask(taskID);
+    model_->removeARow(taskID);
+}
+
 void Widget::startAllTask()
 {
     for(auto i:tasks_)
@@ -159,6 +173,7 @@ void Widget::cancelAllTask()
     int size=tasks_.size();
     for(int i=0;i<tasks_.size();++i){
         cancelTask(tasks_.at(i)->getId(),i);
+        model_->removeARow(0);
     }  
 }
 
