@@ -99,6 +99,7 @@ void Widget::addTask()
             model_->updateRow(SingleTask::TaskProperties::STATUS,dm->getId(),QVariant((int)DownloadStatus::DOWNLOADING));
         });
         connect(dm,&SingleDownloadManager::cancelSuccessed,[this,dm]{
+            model_->removeARow(dm->getId());
             removeTask(dm->getId());
             popTopMsg("取消成功",TopMsgPopType::Success);
         });
@@ -151,6 +152,7 @@ void Widget::removeTaskFromView(QString taskID, int index)
     }
     removeTask(taskID);
     model_->removeARow(taskID);
+    popTopMsg("移除成功",TopMsgPopType::Success);
 }
 
 void Widget::startAllTask()
@@ -173,8 +175,7 @@ void Widget::cancelAllTask()
     int size=tasks_.size();
     for(int i=0;i<tasks_.size();++i){
         cancelTask(tasks_.at(i)->getId(),i);
-        model_->removeARow(0);
-    }  
+    }
 }
 
 void Widget::doSetting()
